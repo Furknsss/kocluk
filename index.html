@@ -241,13 +241,19 @@
 
     function parseDurationMinutes(value) {
       const normalized = value.trim().toLocaleLowerCase("tr-TR");
-      const hourMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:saat|sa\.?|h)(?=\s|$)/);
-      const minuteMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:dakika|dak\.?|dk\.?|min(?:ute)?s?)(?=\s|$)/);
+      const hourMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:saat|sa\.?|h)(?=\s|\)|$)/);
+      const minuteMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:dakika|dak\.?|dk\.?|min(?:ute)?s?)(?=\s|\)|$)/);
       if (!hourMatch && !minuteMatch) return null;
 
       const hours = hourMatch ? Number(hourMatch[1].replace(",", ".")) : 0;
       const minutes = minuteMatch ? Number(minuteMatch[1].replace(",", ".")) : 0;
-      if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || minutes < 0 || minutes >= 60) return null;
+      if (
+        !Number.isFinite(hours) ||
+        !Number.isFinite(minutes) ||
+        hours < 0 ||
+        minutes < 0 ||
+        (hourMatch && minuteMatch && minutes >= 60)
+      ) return null;
       return Math.round(hours * 60 + minutes);
     }
 
@@ -392,7 +398,7 @@
             <div class="text-xs ${isToday ? "font-bold text-indigo-600" : "text-slate-400"}">${d.name}${isToday ? " · Bugün" : ""}</div>
             <div class="text-lg font-bold text-slate-800 my-0.5">${formatScheduleDate(date)}</div>
             <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
-              ? `Toplam süre: ${escapeHtml(scheduleMeta[key].duration)}`
+              ? `${escapeHtml(scheduleMeta[key].durationLabel || "Toplam süre")}: ${escapeHtml(scheduleMeta[key].duration)}`
               : "Toplam süre Excel’de belirtilmedi"}</div>
           </div>
 
@@ -543,21 +549,34 @@
           const sub = (row[3] || "").trim();
           if (!title && !sub) return;
 
-          const explicitDuration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
-          const taskDurations = taskDurationColumnIndexes
-            .map(index => index === -1 ? "" : (row[index] || "").trim())
-            .filter(Boolean);
-          let duration = explicitDuration;
-          if (!duration && taskDurations.length > 0) {
-            const minutes = taskDurations.map(parseDurationMinutes);
-            if (minutes.some(value => value === null)) {
-              throw new Error(`${dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"))} görev süresi Excel’de saat/dakika biçiminde değil.`);
-            }
-            duration = formatDurationMinutes(minutes.reduce((sum, value) => sum + value, 0));
-          }
-          newScheduleMeta[dayKey] = {
-            duration
+          const dayMeta = newScheduleMeta[dayKey] || {
+            duration: "",
+            durationLabel: "",
+            explicitDuration: "",
+            taskDurationMinutes: 0
           };
+          const explicitDuration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
+          if (explicitDuration) dayMeta.explicitDuration = explicitDuration;
+
+          if (!dayMeta.explicitDuration) {
+            const taskDurations = taskDurationColumnIndexes
+              .map(index => index === -1 ? "" : (row[index] || "").trim())
+              .filter(Boolean);
+            if (taskDurations.length > 0) {
+              const minutes = taskDurations.map(parseDurationMinutes);
+              if (minutes.some(value => value === null)) {
+                throw new Error(`${dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"))} görev süresi Excel’de saat/dakika biçiminde değil.`);
+              }
+              dayMeta.taskDurationMinutes += minutes.reduce((sum, value) => sum + value, 0);
+            } else {
+              const goalDuration = parseDurationMinutes((row[5] || "").trim());
+              if (goalDuration !== null) dayMeta.taskDurationMinutes += goalDuration;
+            }
+          }
+          dayMeta.duration = dayMeta.explicitDuration ||
+            (dayMeta.taskDurationMinutes > 0 ? formatDurationMinutes(dayMeta.taskDurationMinutes) : "");
+          dayMeta.durationLabel = dayMeta.explicitDuration ? "Toplam süre" : "Görev süreleri toplamı";
+          newScheduleMeta[dayKey] = dayMeta;
 
           newTasks[dayKey].push({
             title: title || sub,
