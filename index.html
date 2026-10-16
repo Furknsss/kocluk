@@ -105,19 +105,11 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <div id="schedule-period-label" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
-        16 - 18 Ekim 2026
+      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
+        Excel’deki Güncel Program
       </div>
-      <div id="schedule-description" class="text-xs text-slate-500">
-        3 Günlük Nokta Atışı Kampı • 345 Sıfır Risk, Eyüp B. ve Allstar soru çözümü
-      </div>
-      <div class="ml-auto flex items-center gap-1" role="group" aria-label="Program görünümü">
-        <button id="campaign-schedule-button" type="button" onclick="selectSchedule('campaign')" aria-pressed="true" class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
-          16-18 Ekim Kampı
-        </button>
-        <button id="sheet-schedule-button" type="button" onclick="selectSchedule('sheet')" aria-pressed="false" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-          Google Sheets Planı
-        </button>
+      <div class="text-xs text-slate-500">
+        Gemini’nin hazırladığı haftalık plan • Excel/Google Sheets’ten canlı yüklenir
       </div>
     </div>
   </section>
@@ -201,7 +193,7 @@
         <input id="sync-on-load" type="checkbox" class="mt-0.5 accent-indigo-600" onchange="updateSyncSetting(this.checked)">
         <span>
           <span class="block text-sm font-semibold text-slate-800">Sayfa açılınca programı eşitle</span>
-          <span class="mt-1 block text-xs leading-relaxed text-slate-500">Açıldığında Google Sheets’teki en güncel haftalık planı yükler.</span>
+          <span class="mt-1 block text-xs leading-relaxed text-slate-500">Açıldığında Excel’de Gemini’nin hazırladığı en güncel haftalık planı yükler.</span>
         </span>
       </label>
       <div class="mt-5 flex justify-end">
@@ -215,117 +207,33 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
 
     const DAYS_INFO = [
-      { name: "Pazartesi", date: "12", time: "Geçmiş" },
-      { name: "Salı", date: "13", time: "Geçmiş" },
-      { name: "Çarşamba", date: "14", time: "Geçmiş" },
-      { name: "Perşembe", date: "15", time: "Geçmiş" },
-      { name: "Cuma", date: "16", time: "6 saat 45 dk" },
-      { name: "Cumartesi", date: "17", time: "7 saat 15 dk" },
-      { name: "Pazar", date: "18", time: "6 saat 30 dk" }
+      { name: "Pazartesi" },
+      { name: "Salı" },
+      { name: "Çarşamba" },
+      { name: "Perşembe" },
+      { name: "Cuma" },
+      { name: "Cumartesi" },
+      { name: "Pazar" }
     ];
 
-    const CAMPAIGN_DATA = {
-      "pazartesi": [
-        { title: "1 Eylül Başlangıç", sub: "Sadece Geometri & Problem ile Giriş", done: true }
-      ],
-      "salı": [
-        { title: "Problem Altyapısı", sub: "3D VDD Problemler Tamamlandı", done: true }
-      ],
-      "çarşamba": [
-        { title: "Problem İlerleme", sub: "345 Sıfır Risk (Grafik Hariç Bitti)", done: true }
-      ],
-      "perşembe": [
-        { title: "Geometri Altyapı", sub: "Eyüp B. SB Açılar & Dik Üçgen Bitti", done: true }
-      ],
-      "cuma": [
-        { title: "345 Sıfır Risk", sub: "Grafik Problemleri (Kalan Son Testler)", done: false },
-        { title: "Eyüp B. Geometri SB", sub: "İkizkenar & Eşkenar Kalan Testler", done: false },
-        { title: "345 Allstar GGÇK", sub: "Açıortay Soru Çözümü", done: false },
-        { title: "345 Allstar GGÇK", sub: "Benzerlik Soru Çözümü", done: false }
-      ],
-      "cumartesi": [
-        { title: "Eyüp B. Geometri SB", sub: "Açıortay & Kenarortay Testleri", done: false },
-        { title: "345 Allstar GGÇK", sub: "Kenarortay Soru Çözümü", done: false },
-        { title: "345 Sıfır Risk", sub: "Rutin Olmayan Problemler Taraması", done: false },
-        { title: "345 Allstar GGÇK", sub: "Açı-Kenar Bağlantıları Soru Çözümü", done: false }
-      ],
-      "pazar": [
-        { title: "Eyüp B. Geometri SB", sub: "Benzerlik Kazanım & 1 Yorum Testleri", done: false },
-        { title: "345 Allstar GGÇK", sub: "Benzerlik Boş Kalan Testlerin Eritilmesi", done: false },
-        { title: "Koçluk Görüşmesi", sub: "Saat 21:00 Haftalık Değerlendirme & AYT Planı", done: false }
-      ]
-    };
-
     let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || {};
-    let campaignState = JSON.parse(localStorage.getItem("furkan_campaign_state")) || CAMPAIGN_DATA;
-    let activeSchedule = localStorage.getItem("furkan_active_schedule") === "sheet" ? "sheet" : "campaign";
     const DEFAULT_PROFILE = { name: "Furkan", target: "İTÜ Elektrik (İlk 5.000)", photo: "" };
     let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
-    let appSettings = { syncOnLoad: false, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
+    let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     let selectedProfilePhoto = "";
 
     function saveState() {
-      if (activeSchedule === "campaign") {
-        localStorage.setItem("furkan_campaign_state", JSON.stringify(campaignState));
-      } else {
-        localStorage.setItem("furkan_program_state", JSON.stringify(appState));
-      }
+      localStorage.setItem("furkan_program_state", JSON.stringify(appState));
     }
 
-    function migrateCampaignState() {
-      const previousTasks = {
-        pazartesi: [["Geçmiş Bilgi", "1 Eylül Başlangıç (Geometri & Problem)", 0]],
-        salı: [["Geçmiş Bilgi", "3D VDD Problemler Tamamlandı", 0]],
-        "çarşamba": [["Geçmiş Bilgi", "345 Sıfır Risk (Grafik Hariç Bitti)", 0]],
-        "perşembe": [["Geçmiş Bilgi", "Eyüp B. SB Açılar & Dik Üçgen Bitti", 0]],
-        cuma: [
-          ["345 Allstar GGÇK", "Açıortay Soru Çözümü (Konu bitti)", 2],
-          ["345 Allstar GGÇK", "Benzerlik Soru Çözümü (Konu bitti)", 3]
-        ],
-        pazar: [["345 Allstar GGÇK", "Boş Kalan Benzerlik Testlerinin Eritilmesi", 1]]
-      };
-
-      Object.entries(previousTasks).forEach(([day, tasks]) => {
-        const savedTasks = campaignState[day];
-        if (!Array.isArray(savedTasks)) return;
-        tasks.forEach(([oldTitle, oldSub, newIndex]) => {
-          const oldIndex = savedTasks.findIndex(task => task.title === oldTitle && task.sub === oldSub);
-          if (oldIndex === -1) return;
-          savedTasks[oldIndex] = {
-            ...CAMPAIGN_DATA[day][newIndex],
-            done: savedTasks[oldIndex].done
-          };
-        });
-      });
-      localStorage.setItem("furkan_campaign_state", JSON.stringify(campaignState));
-    }
-
-    function selectSchedule(schedule) {
-      if (schedule !== "campaign" && schedule !== "sheet") return;
-      activeSchedule = schedule;
-      localStorage.setItem("furkan_active_schedule", activeSchedule);
-      updateScheduleControls();
-      renderProgram();
-    }
-
-    function updateScheduleControls() {
-      const isCampaign = activeSchedule === "campaign";
-      const campaignButton = document.getElementById("campaign-schedule-button");
-      const sheetButton = document.getElementById("sheet-schedule-button");
-      campaignButton.setAttribute("aria-pressed", String(isCampaign));
-      sheetButton.setAttribute("aria-pressed", String(!isCampaign));
-      campaignButton.className = isCampaign
-        ? "rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700"
-        : "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50";
-      sheetButton.className = isCampaign
-        ? "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-        : "rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700";
-      document.getElementById("schedule-period-label").textContent = isCampaign
-        ? "16 - 18 Ekim Nokta Atışı Kampı"
-        : "Google Sheets planı";
-      document.getElementById("schedule-description").textContent = isCampaign
-        ? "Odak: 345 Sıfır Risk Grafik Problemleri & Allstar GGÇK Soru Çözümleri"
-        : "Google Sheets’teki haftalık program • Tarih ve süre bilgisi kaynak tabloda yok";
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      })[character]);
     }
 
     function renderProfile() {
@@ -334,8 +242,8 @@
       document.getElementById("header-profile-name").textContent = name;
       document.getElementById("student-profile-name").textContent = name;
       document.getElementById("student-profile-target").textContent = profile.target
-        ? `3 Günlük Kamp • Hedef: ${profile.target}`
-        : "3 Günlük Kamp";
+        ? `Gemini Programı • Hedef: ${profile.target}`
+        : "Gemini Programı";
       setAvatar("header-profile-photo", "header-profile-initial", profile.photo, initial);
       setAvatar("student-profile-photo", "student-profile-initial", profile.photo, initial);
     }
@@ -449,11 +357,11 @@
         col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
 
         let html = `
-          <!-- Baykuş Gün Başlığı (Gün + Tarih + Toplam Süre) -->
+          <!-- Haftalık plan gün başlığı -->
           <div class="text-center pb-3 mb-2 border-b border-slate-100">
             <div class="text-xs text-slate-400 font-medium">${d.name}</div>
-            <div class="text-lg font-bold text-slate-800 my-0.5">${activeSchedule === "campaign" ? d.date : "—"}</div>
-            <div class="text-[10px] text-slate-400 font-medium">${activeSchedule === "campaign" ? `Toplam süre: ${d.time}` : "Google Sheets planı"}</div>
+            <div class="text-lg font-bold text-slate-800 my-0.5">Haftalık Plan</div>
+            <div class="text-[10px] text-slate-400 font-medium">Excel’den yüklenen görevler</div>
           </div>
 
           <!-- + Görev Ekle Butonu -->
@@ -465,18 +373,21 @@
           <div class="space-y-2.5 flex-1">
         `;
 
-        const key = d.name.toLowerCase();
-        const scheduleState = activeSchedule === "campaign" ? campaignState : appState;
-        const tasks = scheduleState[key] || [];
+        const key = d.name.toLocaleLowerCase("tr-TR");
+        const tasks = appState[key] || [];
 
         tasks.forEach((t, tIdx) => {
+          const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
           html += `
             <div onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}">
               <div class="flex items-start justify-between">
-                <span class="card-title font-bold text-[12px] text-slate-900 leading-snug">${t.title}</span>
+                <span class="card-title font-bold text-[12px] text-slate-900 leading-snug">${escapeHtml(t.title)}</span>
                 <span class="text-slate-300 font-bold text-xs">•••</span>
               </div>
-              <div class="text-[11px] text-slate-500 font-medium mt-1 leading-tight">${t.sub}</div>
+              ${t.sub ? `<div class="text-[11px] text-slate-500 font-medium mt-1 leading-tight">${escapeHtml(t.sub)}</div>` : ""}
+              ${t.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(t.goal)}</div>` : ""}
+              ${t.note ? `<div class="text-[10px] text-slate-500 mt-1">${escapeHtml(t.note)}</div>` : ""}
+              <div class="text-[10px] text-slate-400 mt-1">Durum: ${escapeHtml(status)}</div>
             </div>
           `;
         });
@@ -488,8 +399,7 @@
     }
 
     function toggleTask(dayKey, tIdx) {
-      const scheduleState = activeSchedule === "campaign" ? campaignState : appState;
-      scheduleState[dayKey][tIdx].done = !scheduleState[dayKey][tIdx].done;
+      appState[dayKey][tIdx].done = !appState[dayKey][tIdx].done;
       saveState();
       renderProgram();
     }
@@ -499,9 +409,8 @@
       const title = prompt("Ders / Kaynak Adı (Örn: 345 Fizik):");
       if (!title) return;
       const sub = prompt("Konu / Detay (Örn: Kuvvet ve Hareket Test 1-2):") || "Çalışma";
-      const scheduleState = activeSchedule === "campaign" ? campaignState : appState;
-      if (!scheduleState[key]) scheduleState[key] = [];
-      scheduleState[key].push({ title, sub, done: false });
+      if (!appState[key]) appState[key] = [];
+      appState[key].push({ title, sub, done: false, status: "Bekliyor" });
       saveState();
       renderProgram();
     }
@@ -568,7 +477,9 @@
           normalizedHeader[1] !== "ders / gün" ||
           !normalizedHeader[2] ||
           !normalizedHeader[3] ||
-          !normalizedHeader[4]
+          !normalizedHeader[4] ||
+          normalizedHeader[5] !== "kalan / hedef soru" ||
+          normalizedHeader[6] !== "notlar & analiz"
         ) {
           throw new Error("Google Sheets CSV başlıkları beklenen biçimde değil.");
         }
@@ -590,7 +501,10 @@
           newTasks[dayKey].push({
             title: title || sub,
             sub: title && sub ? sub : "",
-            done: (row[4] || "").trim().toLocaleLowerCase("tr-TR").includes("tamam")
+            status: (row[4] || "").trim() || "Bekliyor",
+            done: /tamam|bitti|completed|done/i.test((row[4] || "").trim()),
+            goal: (row[5] || "").trim(),
+            note: (row[6] || "").trim()
           });
         });
 
@@ -602,18 +516,12 @@
         }
 
         const previousState = appState;
-        const previousSchedule = activeSchedule;
         appState = newTasks;
-        activeSchedule = "sheet";
         try {
-          localStorage.setItem("furkan_active_schedule", activeSchedule);
-          updateScheduleControls();
           renderProgram();
           saveState();
         } catch (error) {
           appState = previousState;
-          activeSchedule = previousSchedule;
-          updateScheduleControls();
           renderProgram();
           throw error;
         }
@@ -640,9 +548,7 @@
       document.getElementById('nav-' + tab).className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
     }
 
-    migrateCampaignState();
     renderProfile();
-    updateScheduleControls();
     document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
     renderProgram();
     if (appSettings.syncOnLoad) fetchSheetData();
