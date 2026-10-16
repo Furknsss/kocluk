@@ -38,6 +38,14 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .baykus-card.task-dragging { opacity: 0.45; }
+    .task-drag-ghost {
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.96;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.25);
+      transform: rotate(2deg) scale(1.03);
+    }
     .col-border.day-drop-target { background-color: #eef2ff; }
     .baykus-card:hover {
       background-color: #ffffff;
@@ -566,20 +574,45 @@
         taskIndex: Number(card.dataset.taskIndex),
         startX: event.clientX,
         startY: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+        offsetX: event.clientX - card.getBoundingClientRect().left,
+        offsetY: event.clientY - card.getBoundingClientRect().top,
+        dragging: false,
+        moved: false,
       };
       card.setPointerCapture(event.pointerId);
+      taskPress.timer = window.setTimeout(() => {
+        if (!taskPress || taskPress.pointerId !== event.pointerId) return;
+        taskPress.dragging = true;
+        taskPress.card.classList.add("task-dragging");
+        taskPress.ghost = taskPress.card.cloneNode(true);
+        taskPress.ghost.classList.remove("task-dragging");
+        taskPress.ghost.classList.add("task-drag-ghost");
+        taskPress.ghost.removeAttribute("onclick");
+        taskPress.ghost.style.width = `${taskPress.card.getBoundingClientRect().width}px`;
+        document.body.appendChild(taskPress.ghost);
+        moveTaskGhost(taskPress);
+        updateTaskDropTarget(taskPress.x, taskPress.y);
+      }, 400);
+    }
+
+    function moveTaskGhost(press) {
+      if (!press.ghost) return;
+      press.ghost.style.left = `${press.x - press.offsetX}px`;
+      press.ghost.style.top = `${press.y - press.offsetY}px`;
     }
 
     function moveTaskPress(event) {
       if (!taskPress || taskPress.pointerId !== event.pointerId) return;
 
-      if (!taskPress.dragging) {
-        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) <= 8) return;
-        taskPress.dragging = true;
-        taskPress.card.classList.add("task-dragging");
-      }
+      taskPress.x = event.clientX;
+      taskPress.y = event.clientY;
+      if (!taskPress.dragging) return;
 
+      taskPress.moved = taskPress.moved || Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 8;
       event.preventDefault();
+      moveTaskGhost(taskPress);
       updateTaskDropTarget(event.clientX, event.clientY);
     }
 
@@ -588,12 +621,15 @@
 
       const press = taskPress;
       taskPress = null;
+      clearTimeout(press.timer);
       press.card.classList.remove("task-dragging");
+      press.ghost?.remove();
       document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
-      if (!press.dragging || event.type === "pointercancel") return;
+      if (!press.dragging) return;
 
       ignoreNextTaskClick = true;
       window.setTimeout(() => { ignoreNextTaskClick = false; }, 0);
+      if (!press.moved || event.type === "pointercancel") return;
       const position = getTaskDropPosition(event.clientX, event.clientY);
       if (!position) return;
 
