@@ -163,6 +163,24 @@
 
   <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
   <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
+    <section id="coaching-summary" class="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Haftalık ilerleme özeti">
+      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Görevler</div>
+        <div id="summary-tasks" class="mt-0.5 text-sm font-bold text-slate-800">0 / 0 tamamlandı</div>
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Videolar</div>
+        <div id="summary-videos" class="mt-0.5 text-sm font-bold text-slate-800">0 tamamlandı</div>
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Sorular</div>
+        <div id="summary-questions" class="mt-0.5 text-sm font-bold text-slate-800">0 çözüldü</div>
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Doğruluk</div>
+        <div id="summary-accuracy" class="mt-0.5 text-sm font-bold text-slate-800">Henüz veri yok</div>
+      </div>
+    </section>
     <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px] sm:min-w-[1260px] lg:min-w-0">
       <!-- JS ile doldurulur -->
     </div>
@@ -312,6 +330,73 @@
     </section>
   </div>
 
+  <div id="task-progress-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="task-progress-title" onclick="if (event.target === this) closeModal('task-progress-modal')">
+    <section class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl sm:p-6">
+      <div class="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 id="task-progress-title" class="text-lg font-bold text-slate-900">Görev ilerlemesi</h2>
+          <p id="task-progress-subtitle" class="mt-1 text-xs leading-relaxed text-slate-500"></p>
+        </div>
+        <button type="button" onclick="closeModal('task-progress-modal')" aria-label="İlerleme penceresini kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+      </div>
+      <form onsubmit="saveTaskProgress(event)">
+        <label class="mb-3 block text-sm font-semibold text-slate-700" for="progress-video-status">
+          Video durumu
+          <select id="progress-video-status" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal">
+            <option value="not-set">Takip edilmiyor</option>
+            <option value="not-started">İzlenmedi</option>
+            <option value="in-progress">İzleniyor</option>
+            <option value="completed">Tamamlandı</option>
+            <option value="not-applicable">Bu görevde video yok</option>
+          </select>
+        </label>
+        <div class="mb-3 grid gap-3 sm:grid-cols-2">
+          <label class="block text-sm font-semibold text-slate-700" for="progress-solved-tests">
+            Çözülen testler
+            <textarea id="progress-solved-tests" rows="3" maxlength="1000" placeholder="Örn. Test 1, Test 2 / 3. test ilk 8 soru" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"></textarea>
+          </label>
+          <label class="block text-sm font-semibold text-slate-700" for="progress-remaining-tests">
+            Kalan testler
+            <textarea id="progress-remaining-tests" rows="3" maxlength="1000" placeholder="Örn. Test 3 ve Test 4" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"></textarea>
+          </label>
+        </div>
+        <fieldset class="mb-3 rounded-lg border border-slate-200 p-3">
+          <legend class="px-1 text-sm font-semibold text-slate-700">Soru performansı</legend>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <label class="text-xs font-semibold text-slate-600" for="progress-questions-solved">
+              Çözülen
+              <input id="progress-questions-solved" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
+            </label>
+            <label class="text-xs font-semibold text-slate-600" for="progress-questions-total">
+              Toplam hedef
+              <input id="progress-questions-total" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
+            </label>
+            <label class="text-xs font-semibold text-slate-600" for="progress-correct">
+              Doğru
+              <input id="progress-correct" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
+            </label>
+            <label class="text-xs font-semibold text-slate-600" for="progress-incorrect">
+              Yanlış
+              <input id="progress-incorrect" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
+            </label>
+          </div>
+          <p class="mt-2 text-[11px] text-slate-400">Doğru/yanlış toplamı çözülen soru sayısını aşamaz.</p>
+        </fieldset>
+        <label class="mb-4 block text-sm font-semibold text-slate-700" for="progress-coaching-note">
+          Koçluk notu / takıldığın yer
+          <textarea id="progress-coaching-note" rows="2" maxlength="1000" placeholder="Örn. Açıortay sorularında benzerlik bağıntılarını tekrar et" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"></textarea>
+        </label>
+        <div class="flex items-center justify-between gap-3">
+          <button type="button" onclick="clearTaskProgress()" class="rounded-md px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">İlerlemeyi temizle</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('task-progress-modal')" class="rounded-md px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Vazgeç</button>
+            <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Kaydet ve eşitle</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+
   <script>
     // CSV URL BAĞLANTIN (Canlı Senkron İçin)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
@@ -382,10 +467,141 @@
     let deferredInstallPrompt = null;
     let taskPress = null;
     let ignoreNextTaskClick = false;
+    let activeProgressTask = null;
     const shownReminderNotifications = new Set();
 
     function saveState() {
       localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+    }
+
+    function emptyTaskProgress() {
+      return {
+        videoStatus: "not-set",
+        solvedTests: "",
+        remainingTests: "",
+        questionsSolved: null,
+        questionsTotal: null,
+        correctAnswers: null,
+        incorrectAnswers: null,
+        coachingNote: ""
+      };
+    }
+
+    function normalizeTaskProgress(progress = {}) {
+      const allowedVideoStatuses = ["not-set", "not-started", "in-progress", "completed", "not-applicable"];
+      const toCount = value => {
+        if (value === "" || value === null || value === undefined) return null;
+        const count = Number(value);
+        return Number.isInteger(count) && count >= 0 ? count : null;
+      };
+      return {
+        videoStatus: allowedVideoStatuses.includes(progress.videoStatus) ? progress.videoStatus : "not-set",
+        solvedTests: String(progress.solvedTests || ""),
+        remainingTests: String(progress.remainingTests || ""),
+        questionsSolved: toCount(progress.questionsSolved),
+        questionsTotal: toCount(progress.questionsTotal),
+        correctAnswers: toCount(progress.correctAnswers),
+        incorrectAnswers: toCount(progress.incorrectAnswers),
+        coachingNote: String(progress.coachingNote || "")
+      };
+    }
+
+    function hasTaskProgress(progress) {
+      return progress.videoStatus !== "not-set" ||
+        progress.solvedTests.trim() ||
+        progress.remainingTests.trim() ||
+        progress.questionsSolved !== null ||
+        progress.questionsTotal !== null ||
+        progress.correctAnswers !== null ||
+        progress.incorrectAnswers !== null ||
+        progress.coachingNote.trim();
+    }
+
+    function serializeTaskNote(task) {
+      const baseNote = String(task.note || "").replace(/\n?\[KOCLUK_PROGRESS\].*$/s, "").trim();
+      const progress = normalizeTaskProgress(task.progress);
+      if (!hasTaskProgress(progress)) return baseNote;
+
+      const videoLabels = {
+        "not-set": "Takip edilmiyor",
+        "not-started": "İzlenmedi",
+        "in-progress": "İzleniyor",
+        completed: "Tamamlandı",
+        "not-applicable": "Video yok"
+      };
+      const questions = progress.questionsSolved === null && progress.questionsTotal === null
+        ? ""
+        : `${progress.questionsSolved ?? 0}/${progress.questionsTotal ?? "?"}`;
+      const answers = progress.correctAnswers === null && progress.incorrectAnswers === null
+        ? ""
+        : `${progress.correctAnswers ?? 0} doğru, ${progress.incorrectAnswers ?? 0} yanlış`;
+      const readable = [
+        `Video: ${videoLabels[progress.videoStatus]}`,
+        progress.solvedTests && `Çözülen testler: ${progress.solvedTests}`,
+        progress.remainingTests && `Kalan testler: ${progress.remainingTests}`,
+        questions && `Sorular: ${questions}`,
+        answers && `Performans: ${answers}`,
+        progress.coachingNote && `Koçluk notu: ${progress.coachingNote}`
+      ].filter(Boolean).join(" | ");
+      const lines = [baseNote, `İlerleme: ${readable}`, `[KOCLUK_PROGRESS]${JSON.stringify(progress)}`].filter(Boolean);
+      return lines.join("\n");
+    }
+
+    function parseTaskNote(rawNote) {
+      const note = String(rawNote || "");
+      const markerIndex = note.lastIndexOf("[KOCLUK_PROGRESS]");
+      if (markerIndex === -1) return { note, progress: emptyTaskProgress() };
+
+      const baseNote = note.slice(0, markerIndex).replace(/\n?İlerleme: [^\n]*\n?$/, "").trim();
+      try {
+        return {
+          note: baseNote,
+          progress: normalizeTaskProgress(JSON.parse(note.slice(markerIndex + "[KOCLUK_PROGRESS]".length).trim()))
+        };
+      } catch (error) {
+        console.error("Excel'deki görev ilerlemesi okunamadı:", error);
+        return { note, progress: emptyTaskProgress() };
+      }
+    }
+
+    function getTaskProgressSummary(progress) {
+      const value = normalizeTaskProgress(progress);
+      const parts = [];
+      if (value.videoStatus === "completed") parts.push("Video tamamlandı");
+      else if (value.videoStatus === "in-progress") parts.push("Video izleniyor");
+      else if (value.videoStatus === "not-started") parts.push("Video bekliyor");
+      else if (value.videoStatus === "not-applicable") parts.push("Video yok");
+      if (value.solvedTests.trim()) parts.push(`Çözülen: ${value.solvedTests}`);
+      if (value.remainingTests.trim()) parts.push(`Kalan: ${value.remainingTests}`);
+      if (value.questionsSolved !== null || value.questionsTotal !== null) {
+        parts.push(`Soru: ${value.questionsSolved ?? 0}/${value.questionsTotal ?? "?"}`);
+      }
+      if (value.correctAnswers !== null || value.incorrectAnswers !== null) {
+        parts.push(`${value.correctAnswers ?? 0}D / ${value.incorrectAnswers ?? 0}Y`);
+      }
+      if (value.coachingNote.trim()) parts.push(`Not: ${value.coachingNote}`);
+      return parts.join(" · ");
+    }
+
+    function updateCoachingSummary() {
+      const tasks = Object.values(appState).flat();
+      const completedTasks = tasks.filter(task => task.done || /tamam|bitti|completed|done/i.test(task.status || "")).length;
+      const progress = tasks.map(task => normalizeTaskProgress(task.progress));
+      const completedVideos = progress.filter(item => item.videoStatus === "completed").length;
+      const solvedQuestions = progress.reduce((sum, item) => sum + (item.questionsSolved || 0), 0);
+      const plannedQuestions = progress.reduce((sum, item) => sum + (item.questionsTotal || 0), 0);
+      const correct = progress.reduce((sum, item) => sum + (item.correctAnswers || 0), 0);
+      const incorrect = progress.reduce((sum, item) => sum + (item.incorrectAnswers || 0), 0);
+      const attempted = correct + incorrect;
+
+      document.getElementById("summary-tasks").textContent = `${completedTasks} / ${tasks.length} tamamlandı`;
+      document.getElementById("summary-videos").textContent = `${completedVideos} tamamlandı`;
+      document.getElementById("summary-questions").textContent = plannedQuestions
+        ? `${solvedQuestions} / ${plannedQuestions} çözüldü`
+        : `${solvedQuestions} çözüldü`;
+      document.getElementById("summary-accuracy").textContent = attempted
+        ? `${Math.round((correct / attempted) * 100)}% · ${correct}D / ${incorrect}Y`
+        : "Henüz veri yok";
     }
 
     function escapeHtml(value) {
@@ -503,6 +719,88 @@
       document.getElementById(modalId).classList.add("hidden");
     }
 
+    function openTaskProgress(dayKey, taskIndex) {
+      const task = appState[dayKey]?.[taskIndex];
+      if (!task) return;
+      activeProgressTask = { dayKey, taskIndex };
+      const progress = normalizeTaskProgress(task.progress);
+      document.getElementById("task-progress-title").textContent = "Görev ilerlemesi";
+      document.getElementById("task-progress-subtitle").textContent = [task.title, task.sub].filter(Boolean).join(" · ");
+      document.getElementById("progress-video-status").value = progress.videoStatus;
+      document.getElementById("progress-solved-tests").value = progress.solvedTests;
+      document.getElementById("progress-remaining-tests").value = progress.remainingTests;
+      document.getElementById("progress-questions-solved").value = progress.questionsSolved ?? "";
+      document.getElementById("progress-questions-total").value = progress.questionsTotal ?? "";
+      document.getElementById("progress-correct").value = progress.correctAnswers ?? "";
+      document.getElementById("progress-incorrect").value = progress.incorrectAnswers ?? "";
+      document.getElementById("progress-coaching-note").value = progress.coachingNote;
+      closeProfileMenu();
+      document.getElementById("task-progress-modal").classList.remove("hidden");
+    }
+
+    function readProgressCount(inputId) {
+      const value = document.getElementById(inputId).value;
+      return value === "" ? null : Number(value);
+    }
+
+    function saveTaskProgress(event) {
+      event.preventDefault();
+      if (!activeProgressTask) return;
+
+      const progress = normalizeTaskProgress({
+        videoStatus: document.getElementById("progress-video-status").value,
+        solvedTests: document.getElementById("progress-solved-tests").value.trim(),
+        remainingTests: document.getElementById("progress-remaining-tests").value.trim(),
+        questionsSolved: readProgressCount("progress-questions-solved"),
+        questionsTotal: readProgressCount("progress-questions-total"),
+        correctAnswers: readProgressCount("progress-correct"),
+        incorrectAnswers: readProgressCount("progress-incorrect"),
+        coachingNote: document.getElementById("progress-coaching-note").value.trim()
+      });
+      if (progress.questionsSolved === null &&
+          (progress.correctAnswers !== null || progress.incorrectAnswers !== null)) {
+        progress.questionsSolved = (progress.correctAnswers || 0) + (progress.incorrectAnswers || 0);
+      }
+
+      const attemptedAnswers = (progress.correctAnswers || 0) + (progress.incorrectAnswers || 0);
+      if (progress.questionsSolved !== null && attemptedAnswers > progress.questionsSolved) {
+        alert("Doğru ve yanlış toplamı çözülen soru sayısından fazla olamaz.");
+        return;
+      }
+      if (progress.questionsSolved !== null && progress.questionsTotal !== null &&
+          progress.questionsSolved > progress.questionsTotal) {
+        alert("Çözülen soru sayısı toplam hedeften fazla olamaz.");
+        return;
+      }
+
+      const { dayKey, taskIndex } = activeProgressTask;
+      const task = appState[dayKey]?.[taskIndex];
+      if (!task) {
+        closeModal("task-progress-modal");
+        activeProgressTask = null;
+        return;
+      }
+      task.progress = progress;
+      saveState();
+      renderProgram();
+      closeModal("task-progress-modal");
+      activeProgressTask = null;
+      syncTaskProgressToSheet(dayKey, task);
+    }
+
+    function clearTaskProgress() {
+      if (!activeProgressTask) return;
+      const { dayKey, taskIndex } = activeProgressTask;
+      const task = appState[dayKey]?.[taskIndex];
+      if (!task || !window.confirm("Bu görevin video ve soru ilerlemesi temizlensin mi?")) return;
+      task.progress = emptyTaskProgress();
+      saveState();
+      renderProgram();
+      closeModal("task-progress-modal");
+      activeProgressTask = null;
+      syncTaskProgressToSheet(dayKey, task);
+    }
+
     function applyAttachedCampPlan() {
       closeProfileMenu();
       if (!isInitialCampWeek) return;
@@ -532,7 +830,7 @@
           task.sub || "",
           task.done ? "Tamamlandı" : (task.status || "Bekliyor"),
           task.goal || task.duration || "",
-          task.note || ""
+          serializeTaskNote(task)
         ]);
       });
 
@@ -777,6 +1075,7 @@
         closeModal("profile-modal");
         closeModal("settings-modal");
         closeModal("reminder-modal");
+        closeModal("task-progress-modal");
       }
     });
 
@@ -820,6 +1119,7 @@
 
         tasks.forEach((t, tIdx) => {
           const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
+          const progressSummary = getTaskProgressSummary(t.progress);
           html += `
             <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup sürükle">
               <div class="flex items-start justify-between">
@@ -831,6 +1131,10 @@
               ${t.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(t.goal)}</div>` : ""}
               ${t.note ? `<div class="text-[10px] text-slate-500 mt-1">${escapeHtml(t.note)}</div>` : ""}
               <div class="text-[10px] text-slate-400 mt-1">Durum: ${escapeHtml(status)}</div>
+              ${progressSummary ? `<div class="mt-1.5 rounded-md bg-indigo-50 px-2 py-1 text-[10px] font-medium leading-relaxed text-indigo-700">${escapeHtml(progressSummary)}</div>` : ""}
+              <button type="button" onclick="event.stopPropagation(); openTaskProgress('${key}', ${tIdx})" class="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-indigo-200 hover:text-indigo-700" aria-label="Görev ilerlemesini kaydet">
+                ${progressSummary ? "İlerlemeyi düzenle" : "📈 İlerleme gir"}
+              </button>
             </div>
           `;
         });
@@ -839,6 +1143,7 @@
         col.innerHTML = html;
         grid.appendChild(col);
       });
+      updateCoachingSummary();
     }
 
     function getTaskDropPosition(x, y) {
@@ -905,6 +1210,7 @@
       if (
         !card ||
         taskPress ||
+        (event.target.closest("button") && !handle) ||
         (event.pointerType === "mouse" ? event.button !== 0 : !handle)
       ) return;
 
@@ -1038,6 +1344,7 @@
             action: "updateStatus",
             day: dayKey,
             task: task.title,
+            sub: task.sub || "",
             status: task.done ? "Tamamlandı" : "Bekliyor"
           })
         });
@@ -1046,6 +1353,33 @@
       } catch (error) {
         console.error("Görev durumu Apps Script'e gönderilemedi:", error);
         status.textContent = "Görev bu cihazda kaydedildi ancak Excel'e gönderilemedi.";
+        status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
+      }
+    }
+
+    async function syncTaskProgressToSheet(dayKey, task) {
+      const status = document.getElementById("sync-status");
+      status.textContent = "İlerleme kaydedildi; Excel'e gönderiliyor...";
+      status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify({
+            action: "updateProgress",
+            day: dayKey,
+            task: task.title,
+            sub: task.sub || "",
+            note: serializeTaskNote(task)
+          })
+        });
+        status.textContent = "İlerleme Excel'e gönderme isteği olarak iletildi; yanıt doğrulanamıyor.";
+        status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+      } catch (error) {
+        console.error("Görev ilerlemesi Excel'e gönderilemedi:", error);
+        status.textContent = "İlerleme bu cihazda kaydedildi ancak Excel'e gönderilemedi.";
         status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
       }
     }
@@ -1183,13 +1517,15 @@
           dayMeta.durationLabel = dayMeta.explicitDuration ? "Toplam süre" : "Görev süreleri toplamı";
           newScheduleMeta[dayKey] = dayMeta;
 
+          const parsedNote = parseTaskNote(row[6] || "");
           newTasks[dayKey].push({
             title: title || sub,
             sub: title && sub ? sub : "",
             status: (row[4] || "").trim() || "Bekliyor",
             done: /tamam|bitti|completed|done/i.test((row[4] || "").trim()),
             goal: (row[5] || "").trim(),
-            note: (row[6] || "").trim()
+            note: parsedNote.note,
+            progress: parsedNote.progress
           });
           importedTaskCount += 1;
         });

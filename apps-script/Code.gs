@@ -20,8 +20,15 @@ function doPost(e) {
     } finally {
       lock.releaseLock();
     }
-  } else if (body.action === "updateStatus") {
-    updateTaskStatus(sheet, body);
+  } else if (body.action === "updateStatus" || body.action === "updateProgress") {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      if (body.action === "updateStatus") updateTaskStatus(sheet, body);
+      else updateTaskProgress(sheet, body);
+    } finally {
+      lock.releaseLock();
+    }
   } else {
     throw new Error("Desteklenmeyen işlem: " + body.action);
   }
@@ -77,18 +84,35 @@ function replaceWeeklyProgram(sheet, rows) {
 }
 
 function updateTaskStatus(sheet, body) {
+  const row = findWeeklyProgramRow(sheet, body);
+  if (row === -1) throw new Error("Haftalık programda görev bulunamadı.");
+  sheet.getRange(row, 5).setValue(body.status);
+}
+
+function updateTaskProgress(sheet, body) {
+  if (typeof body.note !== "string" || body.note.length > 45000) {
+    throw new Error("Görev ilerleme notu geçersiz veya fazla uzun.");
+  }
+  const row = findWeeklyProgramRow(sheet, body);
+  if (row === -1) throw new Error("Haftalık programda görev bulunamadı.");
+  sheet.getRange(row, 7).setValue(body.note);
+}
+
+function findWeeklyProgramRow(sheet, body) {
   const data = sheet.getDataRange().getValues();
   const normalizedDay = String(body.day || "").trim().toLocaleLowerCase();
   const normalizedTask = String(body.task || "").trim().toLocaleLowerCase();
+  const normalizedSub = String(body.sub || "").trim().toLocaleLowerCase();
 
   for (let i = 1; i < data.length; i += 1) {
     if (
       String(data[i][0]).trim() === WEEKLY_PROGRAM_SECTION &&
       String(data[i][1]).trim().toLocaleLowerCase() === normalizedDay &&
-      String(data[i][2]).trim().toLocaleLowerCase() === normalizedTask
+      String(data[i][2]).trim().toLocaleLowerCase() === normalizedTask &&
+      (!normalizedSub || String(data[i][3]).trim().toLocaleLowerCase() === normalizedSub)
     ) {
-      sheet.getRange(i + 1, 5).setValue(body.status);
-      return;
+      return i + 1;
     }
   }
+  return -1;
 }
