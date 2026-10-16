@@ -126,6 +126,9 @@
         <button id="install-button" type="button" onclick="installApp()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-slate-50" role="menuitem">
           📲 Uygulamayı yükle
         </button>
+        <button id="camp-plan-button" type="button" onclick="applyAttachedCampPlan()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-indigo-50" role="menuitem">
+          📅 Kamp planını uygula / güncelle
+        </button>
         <button id="sync-button" type="button" onclick="fetchSheetData()" class="w-full px-4 py-2.5 text-left text-sm text-indigo-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" role="menuitem">
           🔄 Senkronize Et
         </button>
@@ -155,9 +158,6 @@
       <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
         ✓ 16–18 Ekim Kampı Aktif
       </span>
-      <button id="camp-plan-button" type="button" onclick="applyAttachedCampPlan()" class="hidden rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">
-        Kamp planını uygula / güncelle
-      </button>
     </div>
   </section>
 
@@ -504,6 +504,7 @@
     }
 
     function applyAttachedCampPlan() {
+      closeProfileMenu();
       if (!isInitialCampWeek) return;
       if (!window.confirm("Bu işlem bu haftanın görevlerini güncel 16–18 Ekim kamp planıyla değiştirir. Profil bilgilerin korunur ve planın üzerine yazılmaması için açılışta otomatik Excel eşitlemesi kapatılır. Devam edilsin mi?")) return;
 
