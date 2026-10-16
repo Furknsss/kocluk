@@ -642,6 +642,7 @@
       if (press.placeholder.nextElementSibling === reference) return;
 
       const previousRects = new Map(cards.map(card => [card, card.getBoundingClientRect()]));
+      cards.forEach(card => card.getAnimations().forEach(animation => animation.cancel()));
       if (reference) press.placeholder.parentElement.insertBefore(press.placeholder, reference);
       else press.placeholder.parentElement.appendChild(press.placeholder);
 
@@ -649,11 +650,14 @@
         const previous = previousRects.get(card);
         const current = card.getBoundingClientRect();
         const offsetY = previous.top - current.top;
-        if (offsetY) {
-          card.getAnimations().forEach(animation => animation.cancel());
+        if (offsetY && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          const duration = Math.min(320, 170 + Math.abs(offsetY) * 0.35);
           card.animate(
-            [{ transform: `translateY(${offsetY}px)` }, { transform: "translateY(0)" }],
-            { duration: 120, easing: "ease-out" }
+            [
+              { transform: `translateY(${offsetY}px) scale(0.985)` },
+              { transform: "translateY(0) scale(1)" },
+            ],
+            { duration, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
           );
         }
       });
