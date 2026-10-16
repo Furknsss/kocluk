@@ -32,6 +32,9 @@
       transition: all 0.15s ease;
       cursor: pointer;
       touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .baykus-card.task-dragging { opacity: 0.45; }
@@ -611,6 +614,9 @@
     document.addEventListener("pointermove", moveTaskPress, { passive: false });
     document.addEventListener("pointerup", endTaskPress);
     document.addEventListener("pointercancel", endTaskPress);
+    document.addEventListener("contextmenu", event => {
+      if (event.target.closest("[data-task-index]")) event.preventDefault();
+    });
 
     function toggleTask(dayKey, tIdx) {
       if (ignoreNextTaskClick) {
