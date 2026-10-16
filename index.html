@@ -231,9 +231,30 @@
           Ad
           <input id="profile-name-input" maxlength="50" required class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
         </label>
+        <label class="mb-4 block text-sm font-semibold text-slate-700" for="profile-grade-input">
+          Sınıf durumu
+          <select id="profile-grade-input" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+            <option value="">Seçiniz</option>
+            <option value="Mezun">Mezun</option>
+            <option value="12. sınıf">12. sınıf</option>
+            <option value="11. sınıf">11. sınıf</option>
+            <option value="10. sınıf">10. sınıf</option>
+            <option value="9. sınıf">9. sınıf</option>
+          </select>
+        </label>
+        <label class="mb-5 block text-sm font-semibold text-slate-700" for="profile-track-input">
+          Alan
+          <select id="profile-track-input" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+            <option value="">Seçiniz</option>
+            <option value="Sayısal">Sayısal</option>
+            <option value="Eşit Ağırlık">Eşit Ağırlık</option>
+            <option value="Sözel">Sözel</option>
+            <option value="Dil">Dil</option>
+          </select>
+        </label>
         <div class="flex justify-end gap-2">
           <button type="button" onclick="closeModal('profile-modal')" class="rounded-md px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Vazgeç</button>
-          <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Kaydet</button>
+          <button id="save-profile-button" type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60">Kaydet</button>
         </div>
       </form>
     </section>
@@ -275,9 +296,10 @@
     let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || {};
     let scheduleMeta = JSON.parse(localStorage.getItem("furkan_schedule_meta") || "{}");
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
-    let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
+    let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     let selectedProfilePhoto = "";
+    let profilePhotoProcessing = false;
     let deferredInstallPrompt = null;
     let taskPress = null;
     let ignoreNextTaskClick = false;
@@ -381,6 +403,8 @@
       closeProfileMenu();
       selectedProfilePhoto = profile.photo || "";
       document.getElementById("profile-name-input").value = profile.name || DEFAULT_PROFILE.name;
+      document.getElementById("profile-grade-input").value = profile.grade || "";
+      document.getElementById("profile-track-input").value = profile.track || "";
       document.getElementById("profile-photo-input").value = "";
       setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, (profile.name || "F").trim().charAt(0).toLocaleUpperCase("tr-TR"));
       document.getElementById("profile-modal").classList.remove("hidden");
@@ -446,22 +470,76 @@
         return;
       }
 
+      profilePhotoProcessing = true;
+      const saveButton = document.getElementById("save-profile-button");
+      saveButton.disabled = true;
+      saveButton.textContent = "Fotoğraf hazırlanıyor...";
       const reader = new FileReader();
       reader.onload = () => {
-        selectedProfilePhoto = reader.result;
-        const initial = document.getElementById("profile-name-input").value.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
-        setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, initial);
+        const image = new Image();
+        image.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            const size = 384;
+            const cropSize = Math.min(image.naturalWidth, image.naturalHeight);
+            const cropX = (image.naturalWidth - cropSize) / 2;
+            const cropY = (image.naturalHeight - cropSize) / 2;
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext("2d");
+            if (!context) throw new Error("Fotoğraf düzenleyici başlatılamadı.");
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, size, size);
+            context.drawImage(image, cropX, cropY, cropSize, cropSize, 0, 0, size, size);
+            selectedProfilePhoto = canvas.toDataURL("image/jpeg", 0.82);
+            const initial = document.getElementById("profile-name-input").value.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
+            setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, initial);
+          } catch (error) {
+            console.error("Profil fotoğrafı hazırlanamadı:", error);
+            alert("Fotoğraf hazırlanamadı. Lütfen başka bir fotoğraf seç.");
+            input.value = "";
+          } finally {
+            profilePhotoProcessing = false;
+            saveButton.disabled = false;
+            saveButton.textContent = "Kaydet";
+          }
+        };
+        image.onerror = () => {
+          alert("Fotoğraf açılamadı. Lütfen başka bir fotoğraf seç.");
+          input.value = "";
+          profilePhotoProcessing = false;
+          saveButton.disabled = false;
+          saveButton.textContent = "Kaydet";
+        };
+        image.src = reader.result;
+      };
+      reader.onerror = () => {
+        alert("Fotoğraf okunamadı. Lütfen tekrar dene.");
+        input.value = "";
+        profilePhotoProcessing = false;
+        saveButton.disabled = false;
+        saveButton.textContent = "Kaydet";
       };
       reader.readAsDataURL(file);
     }
 
     function saveProfile(event) {
       event.preventDefault();
-      profile = {
+      if (profilePhotoProcessing) return;
+      const updatedProfile = {
         name: document.getElementById("profile-name-input").value.trim() || DEFAULT_PROFILE.name,
-        photo: selectedProfilePhoto
+        photo: selectedProfilePhoto,
+        grade: document.getElementById("profile-grade-input").value,
+        track: document.getElementById("profile-track-input").value
       };
-      localStorage.setItem("furkan_profile", JSON.stringify(profile));
+      try {
+        localStorage.setItem("furkan_profile", JSON.stringify(updatedProfile));
+      } catch (error) {
+        console.error("Profil kaydedilemedi:", error);
+        alert("Profil kaydedilemedi. Cihazınızda depolama alanı yetersiz olabilir.");
+        return;
+      }
+      profile = updatedProfile;
       renderProfile();
       closeModal("profile-modal");
     }
