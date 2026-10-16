@@ -624,7 +624,10 @@
         .filter(taskCard => taskCard !== taskPress?.card);
       const index = cards.findIndex(card => {
         const rect = card.getBoundingClientRect();
-        return y < rect.top + rect.height / 2;
+        const transform = getComputedStyle(card).transform;
+        const animatedOffsetY = transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
+        const layoutTop = rect.top - animatedOffsetY;
+        return y < layoutTop + card.offsetHeight / 2;
       });
       return { dayKey, index: index === -1 ? cards.length : index };
     }
@@ -647,13 +650,13 @@
         const current = card.getBoundingClientRect();
         const offsetY = previous.top - current.top;
         if (offsetY && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          const duration = Math.min(320, 170 + Math.abs(offsetY) * 0.35);
+          const duration = Math.min(300, 190 + Math.abs(offsetY) * 0.25);
           card.animate(
             [
-              { transform: `translateY(${offsetY}px) scale(0.985)` },
-              { transform: "translateY(0) scale(1)" },
+              { transform: `translateY(${offsetY}px)` },
+              { transform: "translateY(0)" },
             ],
-            { duration, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+            { duration, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
           );
         }
       });
