@@ -152,8 +152,11 @@
       <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
         <span id="current-week-label">Bu haftanın programı</span>
       </div>
+      <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+        ✓ 16–18 Ekim Kampı Aktif
+      </span>
       <button id="camp-plan-button" type="button" onclick="applyAttachedCampPlan()" class="hidden rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">
-        Ekli 16–18 Ekim planını uygula
+        Kamp planını uygula / güncelle
       </button>
     </div>
   </section>
@@ -331,25 +334,23 @@
       perşembe: [],
       cuma: [
         { title: "Grafik Problemleri 4 Test", sub: "345 Sıfır Risk SB", duration: "1.5 saat", done: false },
-        { title: "İkizkenar 1 Test + 1 Yorum Testi", sub: "Eyüp B. Geometri SB", duration: "40 dk", done: false },
-        { title: "Eşkenar 1 Test + 1 Yorum Testi", sub: "Eyüp B. Geometri SB", duration: "40 dk", done: false },
-        { title: "Üçgende Açıortay 4 Test", sub: "345 Allstar GGÇK 1. Kitap", duration: "1 saat 10 dk", done: false },
-        { title: "22:30 Süre Fotosu & Gün Raporu", sub: "Koçluk Check-in", duration: "Saat 22:30", done: false }
+        { title: "İkizkenar 1 Test + 1 Yorum", sub: "Eyüp B. Geometri SB", duration: "40 dk", done: false },
+        { title: "Eşkenar 1 Test + 1 Yorum", sub: "Eyüp B. Geometri SB", duration: "40 dk", done: false },
+        { title: "Üçgende Açıortay 4 Test", sub: "345 Allstar GGÇK", duration: "1 set (70 dk)", done: false }
       ],
       cumartesi: [
-        { title: "Üçgende Açıortay Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "1 saat 15 dk", done: false },
-        { title: "Üçgende Kenarortay 4 Test", sub: "345 Allstar GGÇK 1. Kitap", duration: "1 saat 15 dk", done: false },
-        { title: "Üçgende Kenarortay Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "1 saat 15 dk", done: false },
+        { title: "Açıortay Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "75 dk", done: false },
+        { title: "Üçgende Kenarortay 4 Test", sub: "345 Allstar GGÇK", duration: "75 dk", done: false },
+        { title: "Kenarortay Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "75 dk", done: false },
         { title: "Grafik Problemleri Kalan Testler (Bitiyor)", sub: "345 Sıfır Risk SB", duration: "1.5 saat", done: false },
-        { title: "Açı-Kenar Bağlantıları 3 Test", sub: "345 Allstar GGÇK 1. Kitap", duration: "1 saat", done: false },
-        { title: "22:30 Süre Fotosu & Gün Raporu", sub: "Koçluk Check-in", duration: "Saat 22:30", done: false }
+        { title: "Açı-Kenar Bağlantıları 3 Test", sub: "345 Allstar GGÇK", duration: "60 dk", done: false }
       ],
       pazar: [
         { title: "Açı-Kenar Klasik & 1 Yorum (3 Test)", sub: "Eyüp B. Geometri SB", duration: "1 saat 30 dk", done: false },
-        { title: "Üçgende Benzerlik 5 Test", sub: "345 Allstar GGÇK 1. Kitap", duration: "1.5 saat", done: false },
-        { title: "Üçgende Benzerlik Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "1.5 saat", done: false },
+        { title: "Üçgende Benzerlik 5 Test", sub: "345 Allstar GGÇK", duration: "90 dk", done: false },
+        { title: "Benzerlik Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "90 dk", done: false },
         { title: "Konu Sonlarında Kalan 1-2 Testler (Kitap Bitiyor)", sub: "345 Sıfır Risk SB", duration: "1.5 saat", done: false },
-        { title: "Haftalık Ana Program Toplantısı (AYT Mat & Fen)", sub: "Koçluk Görüşmesi", duration: "Saat 21:00", done: false }
+        { title: "Haftalık Ana Program Toplantısı", sub: "Koçluk Görüşmesi", duration: "Saat 21:00", done: false }
       ]
     };
     const INITIAL_SCHEDULE_META = {
@@ -440,10 +441,9 @@
       const format = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
       document.getElementById("current-week-label").textContent =
         `Bu hafta: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
-      document.getElementById("camp-plan-button").classList.toggle(
-        "hidden",
-        monday.getTime() !== getScheduleDate(0, new Date(2026, 9, 16)).getTime()
-      );
+      const showCampControls = monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
+      document.getElementById("camp-plan-status").classList.toggle("hidden", !showCampControls);
+      document.getElementById("camp-plan-button").classList.toggle("hidden", !showCampControls);
     }
 
     function renderProfile() {
@@ -505,7 +505,7 @@
 
     function applyAttachedCampPlan() {
       if (!isInitialCampWeek) return;
-      if (!window.confirm("Bu işlem bu haftanın görevlerini ekli 16–18 Ekim planıyla değiştirir. Profil bilgilerin korunur ve bu planın üzerine yazılmaması için açılışta otomatik Excel eşitlemesi kapatılır. Devam edilsin mi?")) return;
+      if (!window.confirm("Bu işlem bu haftanın görevlerini güncel 16–18 Ekim kamp planıyla değiştirir. Profil bilgilerin korunur ve planın üzerine yazılmaması için açılışta otomatik Excel eşitlemesi kapatılır. Devam edilsin mi?")) return;
 
       appState = JSON.parse(JSON.stringify(INITIAL_CAMP_DATA));
       scheduleMeta = JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META));
