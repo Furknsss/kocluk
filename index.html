@@ -31,13 +31,21 @@
       position: relative;
       transition: all 0.15s ease;
       cursor: pointer;
-      touch-action: none;
+      touch-action: pan-y;
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .baykus-card.task-dragging { opacity: 0.45; }
+    .task-drag-handle {
+      touch-action: none;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .task-drag-handle:active { cursor: grabbing; }
     .task-drag-ghost {
       position: fixed;
       z-index: 1000;
@@ -518,10 +526,10 @@
         tasks.forEach((t, tIdx) => {
           const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
           html += `
-            <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup başka güne sürükle">
+            <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup sürükle">
               <div class="flex items-start justify-between">
                 <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(t.title)}</span>
-                <span class="text-slate-300 font-bold text-xs">•••</span>
+                <button type="button" data-task-drag-handle onclick="event.stopPropagation()" aria-label="Görevi taşımak için basılı tut" title="Görevi taşımak için basılı tut" class="task-drag-handle -mr-1 -mt-1 px-1 text-slate-400 hover:text-indigo-600 font-bold text-base leading-none">⠿</button>
               </div>
               ${t.sub ? `<div class="text-[11px] text-slate-500 font-medium mt-1 leading-tight">${escapeHtml(t.sub)}</div>` : ""}
               ${t.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(t.goal)}</div>` : ""}
@@ -565,7 +573,12 @@
 
     function startTaskPress(event) {
       const card = event.target.closest("[data-task-index]");
-      if (!card || taskPress || (event.pointerType === "mouse" && event.button !== 0)) return;
+      const handle = event.target.closest("[data-task-drag-handle]");
+      if (
+        !card ||
+        taskPress ||
+        (event.pointerType === "mouse" ? event.button !== 0 : !handle)
+      ) return;
 
       taskPress = {
         pointerId: event.pointerId,
@@ -608,7 +621,13 @@
 
       taskPress.x = event.clientX;
       taskPress.y = event.clientY;
-      if (!taskPress.dragging) return;
+      if (!taskPress.dragging) {
+        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 10) {
+          clearTimeout(taskPress.timer);
+          taskPress = null;
+        }
+        return;
+      }
 
       taskPress.moved = taskPress.moved || Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 8;
       event.preventDefault();
