@@ -620,15 +620,43 @@
       if (!column) return null;
 
       const dayKey = column.dataset.dayKey;
-      const tasks = appState[dayKey] || [];
       const card = hovered.closest("[data-task-index]");
-      if (!card || card.closest("[data-day-key]") !== column) {
-        return { dayKey, index: tasks.length };
+      const cards = Array.from(column.querySelectorAll("[data-task-index]"))
+        .filter(taskCard => taskCard !== taskPress?.card);
+      if (!card || card.closest("[data-day-key]") !== column || card === taskPress?.card) {
+        return { dayKey, index: cards.length };
       }
 
-      const index = Number(card.dataset.taskIndex);
+      const index = cards.indexOf(card);
+      if (index === -1) return { dayKey, index: cards.length };
       const midpoint = card.getBoundingClientRect().top + card.getBoundingClientRect().height / 2;
       return { dayKey, index: index + (y > midpoint ? 1 : 0) };
+    }
+
+    function moveTaskPlaceholder(press, position) {
+      if (!press.placeholder?.isConnected || position.dayKey !== press.dayKey) return;
+
+      const cards = Array.from(press.placeholder.parentElement.querySelectorAll("[data-task-index]"))
+        .filter(card => card !== press.card);
+      const reference = cards[Math.min(position.index, cards.length)] || null;
+      if (press.placeholder.nextElementSibling === reference) return;
+
+      const previousRects = new Map(cards.map(card => [card, card.getBoundingClientRect()]));
+      if (reference) press.placeholder.parentElement.insertBefore(press.placeholder, reference);
+      else press.placeholder.parentElement.appendChild(press.placeholder);
+
+      cards.forEach(card => {
+        const previous = previousRects.get(card);
+        const current = card.getBoundingClientRect();
+        const offsetY = previous.top - current.top;
+        if (offsetY) {
+          card.getAnimations().forEach(animation => animation.cancel());
+          card.animate(
+            [{ transform: `translateY(${offsetY}px)` }, { transform: "translateY(0)" }],
+            { duration: 120, easing: "ease-out" }
+          );
+        }
+      });
     }
 
     function updateTaskDropTarget(x, y) {
@@ -637,6 +665,7 @@
       taskPress.dropPosition = position;
       if (position) {
         document.querySelector(`[data-day-key="${position.dayKey}"]`)?.classList.add("day-drop-target");
+        moveTaskPlaceholder(taskPress, position);
       }
     }
 
@@ -718,8 +747,14 @@
       if (!taskPress || taskPress.pointerId !== event.pointerId) return;
 
       const press = taskPress;
+      const position = press.dragging && event.type !== "pointercancel"
+        ? getTaskDropPosition(event.clientX, event.clientY)
+        : null;
       taskPress = null;
       press.card.classList.remove("task-dragging");
+      if (!position && press.placeholder?.isConnected) {
+        press.card.parentNode.insertBefore(press.placeholder, press.card);
+      }
       if (press.placeholder?.isConnected) press.placeholder.replaceWith(press.card);
       if (press.originalStyle === null) press.card.removeAttribute("style");
       else if (press.originalStyle !== undefined) press.card.setAttribute("style", press.originalStyle);
@@ -728,18 +763,13 @@
 
       ignoreNextTaskClick = true;
       window.setTimeout(() => { ignoreNextTaskClick = false; }, 0);
-      if (!press.moved || event.type === "pointercancel") return;
-      const position = getTaskDropPosition(event.clientX, event.clientY);
-      if (!position) return;
+      if (!press.moved || !position) return;
 
       const sourceTasks = appState[press.dayKey];
       if (!sourceTasks || !sourceTasks[press.taskIndex]) return;
       const [task] = sourceTasks.splice(press.taskIndex, 1);
       if (!appState[position.dayKey]) appState[position.dayKey] = [];
-      const insertIndex = Math.max(0, Math.min(
-        position.index - (position.dayKey === press.dayKey && position.index > press.taskIndex ? 1 : 0),
-        appState[position.dayKey].length
-      ));
+      const insertIndex = Math.max(0, Math.min(position.index, appState[position.dayKey].length));
       appState[position.dayKey].splice(insertIndex, 0, task);
       saveState();
       renderProgram();
