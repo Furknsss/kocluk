@@ -31,8 +31,11 @@
       position: relative;
       transition: all 0.15s ease;
       cursor: pointer;
+      touch-action: pan-y;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
+    .baykus-card.task-dragging { opacity: 0.45; }
+    .col-border.day-drop-target { background-color: #eef2ff; }
     .baykus-card:hover {
       background-color: #ffffff;
       border-color: #cbd5e1;
@@ -257,6 +260,8 @@
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     let selectedProfilePhoto = "";
     let deferredInstallPrompt = null;
+    let taskPress = null;
+    let ignoreNextTaskClick = false;
 
     function saveState() {
       localStorage.setItem("furkan_program_state", JSON.stringify(appState));
@@ -473,6 +478,7 @@
         const isToday = date.toDateString() === today.toDateString();
         const col = document.createElement("div");
         col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
+        col.dataset.dayKey = key;
 
         let html = `
           <div class="text-center pb-3 mb-2 border-b border-slate-100">
@@ -501,7 +507,7 @@
         tasks.forEach((t, tIdx) => {
           const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
           html += `
-            <div onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}">
+            <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup başka güne sürükle">
               <div class="flex items-start justify-between">
                 <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(t.title)}</span>
                 <span class="text-slate-300 font-bold text-xs">•••</span>
@@ -520,7 +526,110 @@
       });
     }
 
+    function getTaskDropPosition(x, y) {
+      const hovered = document.elementFromPoint(x, y);
+      const column = hovered?.closest("[data-day-key]");
+      if (!column) return null;
+
+      const dayKey = column.dataset.dayKey;
+      const tasks = appState[dayKey] || [];
+      const card = hovered.closest("[data-task-index]");
+      if (!card || card.closest("[data-day-key]") !== column) {
+        return { dayKey, index: tasks.length };
+      }
+
+      const index = Number(card.dataset.taskIndex);
+      const midpoint = card.getBoundingClientRect().top + card.getBoundingClientRect().height / 2;
+      return { dayKey, index: index + (y > midpoint ? 1 : 0) };
+    }
+
+    function updateTaskDropTarget(x, y) {
+      document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
+      const position = getTaskDropPosition(x, y);
+      taskPress.dropPosition = position;
+      if (position) {
+        document.querySelector(`[data-day-key="${position.dayKey}"]`)?.classList.add("day-drop-target");
+      }
+    }
+
+    function startTaskPress(event) {
+      const card = event.target.closest("[data-task-index]");
+      if (!card || (event.pointerType === "mouse" && event.button !== 0)) return;
+
+      taskPress = {
+        pointerId: event.pointerId,
+        card,
+        dayKey: card.closest("[data-day-key]").dataset.dayKey,
+        taskIndex: Number(card.dataset.taskIndex),
+        startX: event.clientX,
+        startY: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+        dragging: false,
+        timer: window.setTimeout(() => {
+          if (!taskPress || taskPress.pointerId !== event.pointerId) return;
+          taskPress.dragging = true;
+          taskPress.card.classList.add("task-dragging");
+          updateTaskDropTarget(taskPress.x, taskPress.y);
+        }, 450)
+      };
+    }
+
+    function moveTaskPress(event) {
+      if (!taskPress || taskPress.pointerId !== event.pointerId) return;
+
+      taskPress.x = event.clientX;
+      taskPress.y = event.clientY;
+      if (!taskPress.dragging) {
+        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 10) {
+          clearTimeout(taskPress.timer);
+          taskPress = null;
+        }
+        return;
+      }
+
+      event.preventDefault();
+      updateTaskDropTarget(event.clientX, event.clientY);
+    }
+
+    function endTaskPress(event) {
+      if (!taskPress || taskPress.pointerId !== event.pointerId) return;
+
+      clearTimeout(taskPress.timer);
+      const press = taskPress;
+      taskPress = null;
+      press.card.classList.remove("task-dragging");
+      document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
+      if (!press.dragging) return;
+
+      ignoreNextTaskClick = true;
+      window.setTimeout(() => { ignoreNextTaskClick = false; }, 0);
+      const position = getTaskDropPosition(event.clientX, event.clientY);
+      if (!position) return;
+
+      const sourceTasks = appState[press.dayKey];
+      if (!sourceTasks || !sourceTasks[press.taskIndex]) return;
+      const [task] = sourceTasks.splice(press.taskIndex, 1);
+      if (!appState[position.dayKey]) appState[position.dayKey] = [];
+      const insertIndex = Math.max(0, Math.min(
+        position.index - (position.dayKey === press.dayKey && position.index > press.taskIndex ? 1 : 0),
+        appState[position.dayKey].length
+      ));
+      appState[position.dayKey].splice(insertIndex, 0, task);
+      saveState();
+      renderProgram();
+    }
+
+    document.addEventListener("pointerdown", startTaskPress);
+    document.addEventListener("pointermove", moveTaskPress, { passive: false });
+    document.addEventListener("pointerup", endTaskPress);
+    document.addEventListener("pointercancel", endTaskPress);
+
     function toggleTask(dayKey, tIdx) {
+      if (ignoreNextTaskClick) {
+        ignoreNextTaskClick = false;
+        return;
+      }
       appState[dayKey][tIdx].done = !appState[dayKey][tIdx].done;
       saveState();
       renderProgram();
