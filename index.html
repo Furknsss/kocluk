@@ -93,7 +93,6 @@
         </div>
         <div>
           <div id="student-profile-name" class="text-xs font-bold text-slate-800 leading-none">Furkan</div>
-          <div id="student-profile-target" class="text-[11px] text-slate-400 font-medium mt-0.5">Tablolar • Hedef: İTÜ Elektrik (İlk 5.000)</div>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -107,9 +106,6 @@
     <div class="flex flex-wrap items-center gap-3">
       <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
         <span id="current-week-label">Bu haftanın programı</span>
-      </div>
-      <div class="text-xs text-slate-500">
-        Gemini’nin hazırladığı haftalık plan • Excel/Google Sheets’ten canlı yüklenir
       </div>
     </div>
   </section>
@@ -171,10 +167,6 @@
           Ad
           <input id="profile-name-input" maxlength="50" required class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
         </label>
-        <label class="mb-6 block text-sm font-semibold text-slate-700" for="profile-target-input">
-          Hedef
-          <input id="profile-target-input" maxlength="100" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-        </label>
         <div class="flex justify-end gap-2">
           <button type="button" onclick="closeModal('profile-modal')" class="rounded-md px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Vazgeç</button>
           <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Kaydet</button>
@@ -193,7 +185,7 @@
         <input id="sync-on-load" type="checkbox" class="mt-0.5 accent-indigo-600" onchange="updateSyncSetting(this.checked)">
         <span>
           <span class="block text-sm font-semibold text-slate-800">Sayfa açılınca programı eşitle</span>
-          <span class="mt-1 block text-xs leading-relaxed text-slate-500">Açıldığında Excel’de Gemini’nin hazırladığı en güncel haftalık planı yükler.</span>
+          <span class="mt-1 block text-xs leading-relaxed text-slate-500">Açıldığında Excel’deki en güncel haftalık planı yükler.</span>
         </span>
       </label>
       <div class="mt-5 flex justify-end">
@@ -218,7 +210,7 @@
 
     let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || {};
     let scheduleMeta = JSON.parse(localStorage.getItem("furkan_schedule_meta") || "{}");
-    const DEFAULT_PROFILE = { name: "Furkan", target: "İTÜ Elektrik (İlk 5.000)", photo: "" };
+    const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     let selectedProfilePhoto = "";
@@ -281,9 +273,6 @@
       const initial = name.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
       document.getElementById("header-profile-name").textContent = name;
       document.getElementById("student-profile-name").textContent = name;
-      document.getElementById("student-profile-target").textContent = profile.target
-        ? `Gemini Programı • Hedef: ${profile.target}`
-        : "Gemini Programı";
       setAvatar("header-profile-photo", "header-profile-initial", profile.photo, initial);
       setAvatar("student-profile-photo", "student-profile-initial", profile.photo, initial);
     }
@@ -319,7 +308,6 @@
       closeProfileMenu();
       selectedProfilePhoto = profile.photo || "";
       document.getElementById("profile-name-input").value = profile.name || DEFAULT_PROFILE.name;
-      document.getElementById("profile-target-input").value = profile.target || "";
       document.getElementById("profile-photo-input").value = "";
       setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, (profile.name || "F").trim().charAt(0).toLocaleUpperCase("tr-TR"));
       document.getElementById("profile-modal").classList.remove("hidden");
@@ -362,7 +350,6 @@
       event.preventDefault();
       profile = {
         name: document.getElementById("profile-name-input").value.trim() || DEFAULT_PROFILE.name,
-        target: document.getElementById("profile-target-input").value.trim(),
         photo: selectedProfilePhoto
       };
       localStorage.setItem("furkan_profile", JSON.stringify(profile));
