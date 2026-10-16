@@ -31,7 +31,7 @@
       position: relative;
       transition: all 0.15s ease;
       cursor: pointer;
-      touch-action: pan-y;
+      touch-action: none;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .baykus-card.task-dragging { opacity: 0.45; }
@@ -554,7 +554,7 @@
 
     function startTaskPress(event) {
       const card = event.target.closest("[data-task-index]");
-      if (!card || (event.pointerType === "mouse" && event.button !== 0)) return;
+      if (!card || taskPress || (event.pointerType === "mouse" && event.button !== 0)) return;
 
       taskPress = {
         pointerId: event.pointerId,
@@ -563,29 +563,17 @@
         taskIndex: Number(card.dataset.taskIndex),
         startX: event.clientX,
         startY: event.clientY,
-        x: event.clientX,
-        y: event.clientY,
-        dragging: false,
-        timer: window.setTimeout(() => {
-          if (!taskPress || taskPress.pointerId !== event.pointerId) return;
-          taskPress.dragging = true;
-          taskPress.card.classList.add("task-dragging");
-          updateTaskDropTarget(taskPress.x, taskPress.y);
-        }, 450)
       };
+      card.setPointerCapture(event.pointerId);
     }
 
     function moveTaskPress(event) {
       if (!taskPress || taskPress.pointerId !== event.pointerId) return;
 
-      taskPress.x = event.clientX;
-      taskPress.y = event.clientY;
       if (!taskPress.dragging) {
-        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 10) {
-          clearTimeout(taskPress.timer);
-          taskPress = null;
-        }
-        return;
+        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) <= 8) return;
+        taskPress.dragging = true;
+        taskPress.card.classList.add("task-dragging");
       }
 
       event.preventDefault();
@@ -595,12 +583,11 @@
     function endTaskPress(event) {
       if (!taskPress || taskPress.pointerId !== event.pointerId) return;
 
-      clearTimeout(taskPress.timer);
       const press = taskPress;
       taskPress = null;
       press.card.classList.remove("task-dragging");
       document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
-      if (!press.dragging) return;
+      if (!press.dragging || event.type === "pointercancel") return;
 
       ignoreNextTaskClick = true;
       window.setTimeout(() => { ignoreNextTaskClick = false; }, 0);
