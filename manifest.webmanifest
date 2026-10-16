@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "Koçluk Programım",
+  "short_name": "Koçluk",
+  "description": "Haftalık çalışma programını takip et, görevlerini tamamla ve ilerlemeni gör.",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Haftalık çalışma programını takip et, görevlerini tamamla ve ilerlemeni gör." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
   <title>Furkan | Program</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -47,19 +54,33 @@
     }
     ::-webkit-scrollbar { height: 6px; width: 6px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    @media (max-width: 639px) {
+      #app-header { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+      #app-header > div:first-child { flex: 1 1 100%; gap: 16px; }
+      #app-nav { flex: 1; min-width: 0; gap: 18px; overflow-x: auto; scrollbar-width: none; }
+      #app-nav::-webkit-scrollbar { display: none; }
+      #app-nav button { flex: 0 0 auto; white-space: nowrap; }
+      #profile-menu-wrap { margin-left: auto; margin-top: -42px; }
+      #student-week-bar { padding-left: 16px; padding-right: 16px; }
+      #student-week-row { align-items: flex-start; gap: 12px; flex-direction: column; }
+      #sync-controls { width: 100%; flex-wrap: wrap; }
+      #view-program { padding-left: 12px; padding-right: 12px; }
+      #kanban-grid { grid-template-columns: repeat(7, minmax(82vw, 1fr)); }
+      #view-analiz, #view-deneme { padding: 20px 16px; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
   <!-- ÜST NAVİGASYON (BAYKUŞ BİREBİR) -->
-  <header class="border-b border-slate-200 px-8 py-3.5 flex items-center justify-between bg-white sticky top-0 z-50">
+  <header id="app-header" class="border-b border-slate-200 px-8 py-3.5 flex items-center justify-between bg-white sticky top-0 z-50">
     <div class="flex items-center space-x-8">
       <div class="flex items-center space-x-2 cursor-pointer">
         <svg class="w-7 h-7 text-slate-900" viewBox="0 0 36 36" fill="currentColor">
           <path d="M18 3C10.8 3 5 8.8 5 16c0 5.2 3.1 9.7 7.6 11.8L18 33l5.4-5.2C27.9 25.7 31 21.2 31 16c0-7.2-5.8-13-13-13zm-4.5 15.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm9 0c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
         </svg>
       </div>
-      <nav class="flex items-center space-x-6 text-[13px] font-bold">
+      <nav id="app-nav" class="flex items-center space-x-6 text-[13px] font-bold">
         <button onclick="switchTab('program')" id="nav-program" class="text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1">Program</button>
         <button onclick="switchTab('analiz')" id="nav-analiz" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Kaynak &amp; İlerleme</button>
         <button onclick="switchTab('deneme')" id="nav-deneme" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Deneme Röntgeni</button>
@@ -83,8 +104,8 @@
   </header>
 
   <!-- ÖĞRENCİ & HAFTA SEÇİM BARI -->
-  <section class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
-    <div class="flex items-center justify-between mb-3">
+  <section id="student-week-bar" class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
+    <div id="student-week-row" class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-3">
         <div class="w-8 h-8 overflow-hidden rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
           <img id="student-profile-photo" class="hidden w-full h-full object-cover" alt="Profil fotoğrafı">
@@ -94,7 +115,10 @@
           <div id="student-profile-name" class="text-xs font-bold text-slate-800 leading-none">Furkan</div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div id="sync-controls" class="flex items-center gap-2">
+        <button id="install-button" type="button" onclick="installApp()" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
+          📲 Uygulamayı yükle
+        </button>
         <button id="sync-button" type="button" onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-indigo-600 hover:bg-slate-50 flex items-center gap-1.5">
           🔄 Canlı Senkronize Et
         </button>
@@ -111,7 +135,7 @@
 
   <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
   <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
-    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px]">
+    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px] sm:min-w-[1260px] lg:min-w-0">
       <!-- JS ile doldurulur -->
     </div>
   </main>
@@ -144,6 +168,17 @@
       </div>
     </div>
   </main>
+
+  <div id="ios-install-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="ios-install-title" onclick="if (event.target === this) closeModal('ios-install-modal')">
+    <section class="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 id="ios-install-title" class="text-lg font-bold text-slate-900">Ana ekrana ekle</h2>
+        <button type="button" onclick="closeModal('ios-install-modal')" aria-label="Pencereyi kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+      </div>
+      <p class="text-sm leading-relaxed text-slate-600">Safari’de paylaş simgesine dokun, ardından <strong>Ana Ekrana Ekle</strong> seçeneğini seç. Uygulama ana ekranda tam ekran açılır.</p>
+      <button type="button" onclick="closeModal('ios-install-modal')" class="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">Tamam</button>
+    </section>
+  </div>
 
   <div id="profile-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" onclick="if (event.target === this) closeModal('profile-modal')">
     <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
@@ -213,6 +248,7 @@
     let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     let selectedProfilePhoto = "";
+    let deferredInstallPrompt = null;
 
     function saveState() {
       localStorage.setItem("furkan_program_state", JSON.stringify(appState));
@@ -328,6 +364,42 @@
       document.getElementById(modalId).classList.add("hidden");
     }
 
+    async function installApp() {
+      if (!deferredInstallPrompt) {
+        document.getElementById("ios-install-modal").classList.remove("hidden");
+        return;
+      }
+
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      document.getElementById("install-button").classList.add("hidden");
+    }
+
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      document.getElementById("install-button").classList.remove("hidden");
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      document.getElementById("install-button").classList.add("hidden");
+    });
+
+    const isIosDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (isIosDevice && !isStandalone) {
+      const installButton = document.getElementById("install-button");
+      installButton.textContent = "Ana ekrana ekle";
+      installButton.classList.remove("hidden");
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./service-worker.js")
+        .catch(error => console.error("Service worker kaydedilemedi:", error));
+    }
+
     function previewProfilePhoto(input) {
       const file = input.files[0];
       if (!file) return;
@@ -375,6 +447,7 @@
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") {
         closeProfileMenu();
+        closeModal("ios-install-modal");
         closeModal("profile-modal");
         closeModal("settings-modal");
       }
