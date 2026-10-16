@@ -248,6 +248,26 @@
       return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" }).format(date);
     }
 
+    function parseDurationMinutes(value) {
+      const normalized = value.trim().toLocaleLowerCase("tr-TR");
+      const hourMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:saat|sa\.?|h)(?=\s|$)/);
+      const minuteMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:dakika|dak\.?|dk\.?|min(?:ute)?s?)(?=\s|$)/);
+      if (!hourMatch && !minuteMatch) return null;
+
+      const hours = hourMatch ? Number(hourMatch[1].replace(",", ".")) : 0;
+      const minutes = minuteMatch ? Number(minuteMatch[1].replace(",", ".")) : 0;
+      if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || minutes < 0 || minutes >= 60) return null;
+      return Math.round(hours * 60 + minutes);
+    }
+
+    function formatDurationMinutes(totalMinutes) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours === 0) return `${minutes} dakika`;
+      if (minutes === 0) return `${hours} saat`;
+      return `${hours} saat ${minutes} dakika`;
+    }
+
     function updateCurrentWeekLabel(referenceDate = new Date()) {
       const monday = getScheduleDate(0, referenceDate);
       const sunday = getScheduleDate(6, referenceDate);
@@ -406,7 +426,7 @@
           html += `
             <div onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}">
               <div class="flex items-start justify-between">
-                <span class="card-title font-bold text-[12px] text-slate-900 leading-snug">${escapeHtml(t.title)}</span>
+                <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(t.title)}</span>
                 <span class="text-slate-300 font-bold text-xs">•••</span>
               </div>
               ${t.sub ? `<div class="text-[11px] text-slate-500 font-medium mt-1 leading-tight">${escapeHtml(t.sub)}</div>` : ""}
@@ -511,6 +531,10 @@
         const durationColumnIndex = normalizedHeader.findIndex(value =>
           value === "toplam süre" || value === "günlük toplam süre"
         );
+        const taskDurationColumnIndexes = [
+          normalizedHeader.findIndex(value => /^(?:görev\s*1\s*süre(?:si)?|süre\s*1)$/.test(value)),
+          normalizedHeader.findIndex(value => /^(?:görev\s*2\s*süre(?:si)?|süre\s*2)$/.test(value))
+        ];
 
         const dayKeys = new Map(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), day.name.toLocaleLowerCase("tr-TR")]));
         const newTasks = Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]));
@@ -528,7 +552,18 @@
           const sub = (row[3] || "").trim();
           if (!title && !sub) return;
 
-          const duration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
+          const explicitDuration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
+          const taskDurations = taskDurationColumnIndexes
+            .map(index => index === -1 ? "" : (row[index] || "").trim())
+            .filter(Boolean);
+          let duration = explicitDuration;
+          if (!duration && taskDurations.length > 0) {
+            const minutes = taskDurations.map(parseDurationMinutes);
+            if (minutes.some(value => value === null)) {
+              throw new Error(`${dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"))} görev süresi Excel’de saat/dakika biçiminde değil.`);
+            }
+            duration = formatDurationMinutes(minutes.reduce((sum, value) => sum + value, 0));
+          }
           newScheduleMeta[dayKey] = {
             duration
           };
