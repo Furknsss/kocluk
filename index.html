@@ -48,11 +48,14 @@
     .task-drag-handle:active { cursor: grabbing; }
     .task-drag-ghost {
       position: fixed;
+      left: 0;
+      top: 0;
       z-index: 1000;
       pointer-events: none;
       opacity: 0.96;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.25);
-      transform: rotate(2deg) scale(1.03);
+      transition: none;
+      will-change: transform;
     }
     .col-border.day-drop-target { background-color: #eef2ff; }
     .baykus-card:hover {
@@ -671,25 +674,23 @@
         moved: false,
       };
       card.setPointerCapture(event.pointerId);
-      taskPress.timer = window.setTimeout(() => {
-        if (!taskPress || taskPress.pointerId !== event.pointerId) return;
-        taskPress.dragging = true;
-        taskPress.card.classList.add("task-dragging");
-        taskPress.ghost = taskPress.card.cloneNode(true);
-        taskPress.ghost.classList.remove("task-dragging");
-        taskPress.ghost.classList.add("task-drag-ghost");
-        taskPress.ghost.removeAttribute("onclick");
-        taskPress.ghost.style.width = `${taskPress.card.getBoundingClientRect().width}px`;
-        document.body.appendChild(taskPress.ghost);
-        moveTaskGhost(taskPress);
-        updateTaskDropTarget(taskPress.x, taskPress.y);
-      }, 400);
+    }
+
+    function beginTaskDrag(press) {
+      press.dragging = true;
+      press.moved = true;
+      press.card.classList.add("task-dragging");
+      press.ghost = press.card.cloneNode(true);
+      press.ghost.classList.remove("task-dragging");
+      press.ghost.classList.add("task-drag-ghost");
+      press.ghost.removeAttribute("onclick");
+      press.ghost.style.width = `${press.card.getBoundingClientRect().width}px`;
+      document.body.appendChild(press.ghost);
     }
 
     function moveTaskGhost(press) {
       if (!press.ghost) return;
-      press.ghost.style.left = `${press.x - press.offsetX}px`;
-      press.ghost.style.top = `${press.y - press.offsetY}px`;
+      press.ghost.style.transform = `translate3d(${press.x - press.offsetX}px, ${press.y - press.offsetY}px, 0) rotate(2deg) scale(1.03)`;
     }
 
     function moveTaskPress(event) {
@@ -698,14 +699,10 @@
       taskPress.x = event.clientX;
       taskPress.y = event.clientY;
       if (!taskPress.dragging) {
-        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 10) {
-          clearTimeout(taskPress.timer);
-          taskPress = null;
-        }
-        return;
+        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) <= 6) return;
+        beginTaskDrag(taskPress);
       }
 
-      taskPress.moved = taskPress.moved || Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) > 8;
       event.preventDefault();
       moveTaskGhost(taskPress);
       updateTaskDropTarget(event.clientX, event.clientY);
@@ -716,7 +713,6 @@
 
       const press = taskPress;
       taskPress = null;
-      clearTimeout(press.timer);
       press.card.classList.remove("task-dragging");
       press.ghost?.remove();
       document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
