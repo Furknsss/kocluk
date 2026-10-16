@@ -67,9 +67,18 @@
     </div>
 
     <!-- Sağ Profil -->
-    <div class="flex items-center space-x-3">
-      <span class="text-xs font-semibold text-slate-700">Furkan (İTÜ Hedef)</span>
-      <div class="w-8 h-8 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center">F</div>
+    <div id="profile-menu-wrap" class="relative">
+      <button id="profile-menu-button" type="button" onclick="toggleProfileMenu()" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-slate-950">
+        <span id="header-profile-name">Furkan</span>
+        <span class="w-8 h-8 overflow-hidden rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
+          <img id="header-profile-photo" class="hidden w-full h-full object-cover" alt="Profil fotoğrafı">
+          <span id="header-profile-initial">F</span>
+        </span>
+      </button>
+      <div id="profile-menu" class="hidden absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-[60]" role="menu">
+        <button type="button" onclick="openProfileModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">Profil</button>
+        <button type="button" onclick="openSettingsModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">Ayarlar</button>
+      </div>
     </div>
   </header>
 
@@ -78,15 +87,21 @@
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-3">
         <span class="text-slate-400 text-sm font-bold">&lt;</span>
-        <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">F</div>
+        <div class="w-8 h-8 overflow-hidden rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
+          <img id="student-profile-photo" class="hidden w-full h-full object-cover" alt="Profil fotoğrafı">
+          <span id="student-profile-initial">F</span>
+        </div>
         <div>
-          <div class="text-xs font-bold text-slate-800 leading-none">Furkan</div>
-          <div class="text-[11px] text-slate-400 font-medium mt-0.5">Tablolar • Hedef: İTÜ Elektrik (İlk 5.000)</div>
+          <div id="student-profile-name" class="text-xs font-bold text-slate-800 leading-none">Furkan</div>
+          <div id="student-profile-target" class="text-[11px] text-slate-400 font-medium mt-0.5">Tablolar • Hedef: İTÜ Elektrik (İlk 5.000)</div>
         </div>
       </div>
-      <button onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-indigo-600 hover:bg-slate-50 flex items-center gap-1.5">
-        🔄 Senkronize Et
-      </button>
+      <div class="flex items-center gap-2">
+        <button id="sync-button" type="button" onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-indigo-600 hover:bg-slate-50 flex items-center gap-1.5">
+          🔄 Senkronize Et
+        </button>
+        <span id="sync-status" class="text-xs font-semibold" role="status" aria-live="polite"></span>
+      </div>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
@@ -135,6 +150,58 @@
       </div>
     </div>
   </main>
+
+  <div id="profile-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" onclick="if (event.target === this) closeModal('profile-modal')">
+    <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div class="mb-5 flex items-center justify-between">
+        <h2 id="profile-modal-title" class="text-lg font-bold text-slate-900">Profil</h2>
+        <button type="button" onclick="closeModal('profile-modal')" aria-label="Profili kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+      </div>
+      <form onsubmit="saveProfile(event)">
+        <div class="mb-5 flex items-center gap-4">
+          <span class="h-16 w-16 overflow-hidden rounded-full bg-slate-900 text-white flex items-center justify-center text-xl font-bold">
+            <img id="profile-photo-preview" class="hidden h-full w-full object-cover" alt="Profil fotoğrafı önizlemesi">
+            <span id="profile-photo-initial">F</span>
+          </span>
+          <label class="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Fotoğraf seç
+            <input id="profile-photo-input" type="file" accept="image/*" class="sr-only" onchange="previewProfilePhoto(this)">
+          </label>
+        </div>
+        <label class="mb-4 block text-sm font-semibold text-slate-700" for="profile-name-input">
+          Ad
+          <input id="profile-name-input" maxlength="50" required class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+        </label>
+        <label class="mb-6 block text-sm font-semibold text-slate-700" for="profile-target-input">
+          Hedef
+          <input id="profile-target-input" maxlength="100" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+        </label>
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="closeModal('profile-modal')" class="rounded-md px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Vazgeç</button>
+          <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Kaydet</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="settings-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" onclick="if (event.target === this) closeModal('settings-modal')">
+    <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div class="mb-5 flex items-center justify-between">
+        <h2 id="settings-modal-title" class="text-lg font-bold text-slate-900">Ayarlar</h2>
+        <button type="button" onclick="closeModal('settings-modal')" aria-label="Ayarları kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+      </div>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-4">
+        <input id="sync-on-load" type="checkbox" class="mt-0.5 accent-indigo-600" onchange="updateSyncSetting(this.checked)">
+        <span>
+          <span class="block text-sm font-semibold text-slate-800">Sayfa açılınca programı eşitle</span>
+          <span class="mt-1 block text-xs leading-relaxed text-slate-500">Açıldığında Google Sheets’teki en güncel haftalık planı yükler.</span>
+        </span>
+      </label>
+      <div class="mt-5 flex justify-end">
+        <button type="button" onclick="closeModal('settings-modal')" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Tamam</button>
+      </div>
+    </section>
+  </div>
 
   <script>
     // CSV URL BAĞLANTIN (Canlı Senkron İçin)
@@ -194,10 +261,126 @@
     };
 
     let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || DEFAULT_DATA;
+    const DEFAULT_PROFILE = { name: "Furkan", target: "İTÜ Elektrik (İlk 5.000)", photo: "" };
+    let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
+    let appSettings = { syncOnLoad: false, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
+    let selectedProfilePhoto = "";
 
     function saveState() {
       localStorage.setItem("furkan_program_state", JSON.stringify(appState));
     }
+
+    function renderProfile() {
+      const name = profile.name || DEFAULT_PROFILE.name;
+      const initial = name.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
+      document.getElementById("header-profile-name").textContent = name;
+      document.getElementById("student-profile-name").textContent = name;
+      document.getElementById("student-profile-target").textContent = profile.target
+        ? `Tablolar • Hedef: ${profile.target}`
+        : "Tablolar";
+      setAvatar("header-profile-photo", "header-profile-initial", profile.photo, initial);
+      setAvatar("student-profile-photo", "student-profile-initial", profile.photo, initial);
+    }
+
+    function setAvatar(imageId, initialId, photo, initial) {
+      const image = document.getElementById(imageId);
+      const fallback = document.getElementById(initialId);
+      fallback.textContent = initial;
+      if (photo) {
+        image.src = photo;
+        image.classList.remove("hidden");
+        fallback.classList.add("hidden");
+      } else {
+        image.removeAttribute("src");
+        image.classList.add("hidden");
+        fallback.classList.remove("hidden");
+      }
+    }
+
+    function toggleProfileMenu() {
+      const menu = document.getElementById("profile-menu");
+      const isOpening = menu.classList.contains("hidden");
+      menu.classList.toggle("hidden");
+      document.getElementById("profile-menu-button").setAttribute("aria-expanded", String(isOpening));
+    }
+
+    function closeProfileMenu() {
+      document.getElementById("profile-menu").classList.add("hidden");
+      document.getElementById("profile-menu-button").setAttribute("aria-expanded", "false");
+    }
+
+    function openProfileModal() {
+      closeProfileMenu();
+      selectedProfilePhoto = profile.photo || "";
+      document.getElementById("profile-name-input").value = profile.name || DEFAULT_PROFILE.name;
+      document.getElementById("profile-target-input").value = profile.target || "";
+      document.getElementById("profile-photo-input").value = "";
+      setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, (profile.name || "F").trim().charAt(0).toLocaleUpperCase("tr-TR"));
+      document.getElementById("profile-modal").classList.remove("hidden");
+    }
+
+    function openSettingsModal() {
+      closeProfileMenu();
+      document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
+      document.getElementById("settings-modal").classList.remove("hidden");
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add("hidden");
+    }
+
+    function previewProfilePhoto(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        alert("Lütfen bir fotoğraf dosyası seç.");
+        input.value = "";
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Fotoğraf en fazla 2 MB olabilir.");
+        input.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        selectedProfilePhoto = reader.result;
+        const initial = document.getElementById("profile-name-input").value.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
+        setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, initial);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveProfile(event) {
+      event.preventDefault();
+      profile = {
+        name: document.getElementById("profile-name-input").value.trim() || DEFAULT_PROFILE.name,
+        target: document.getElementById("profile-target-input").value.trim(),
+        photo: selectedProfilePhoto
+      };
+      localStorage.setItem("furkan_profile", JSON.stringify(profile));
+      renderProfile();
+      closeModal("profile-modal");
+    }
+
+    function updateSyncSetting(enabled) {
+      appSettings.syncOnLoad = enabled;
+      localStorage.setItem("furkan_settings", JSON.stringify(appSettings));
+      if (enabled) fetchSheetData();
+    }
+
+    document.addEventListener("click", event => {
+      if (!document.getElementById("profile-menu-wrap").contains(event.target)) closeProfileMenu();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeProfileMenu();
+        closeModal("profile-modal");
+        closeModal("settings-modal");
+      }
+    });
 
     function renderProgram() {
       const grid = document.getElementById("kanban-grid");
@@ -262,34 +445,122 @@
       renderProgram();
     }
 
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let field = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const character = text[i];
+        if (inQuotes) {
+          if (character === '"' && text[i + 1] === '"') {
+            field += '"';
+            i += 1;
+          } else if (character === '"') {
+            inQuotes = false;
+          } else {
+            field += character;
+          }
+        } else if (character === '"' && field.length === 0) {
+          inQuotes = true;
+        } else if (character === ",") {
+          row.push(field);
+          field = "";
+        } else if (character === "\n" || character === "\r") {
+          row.push(field);
+          rows.push(row);
+          row = [];
+          field = "";
+          if (character === "\r" && text[i + 1] === "\n") i += 1;
+        } else {
+          field += character;
+        }
+      }
+
+      if (inQuotes) throw new Error("CSV biçimi geçersiz: kapanmamış tırnak.");
+      if (field.length > 0 || row.length > 0) {
+        row.push(field);
+        rows.push(row);
+      }
+      return rows;
+    }
+
     async function fetchSheetData() {
+      const button = document.getElementById("sync-button");
+      const status = document.getElementById("sync-status");
+      button.disabled = true;
+      status.textContent = "Senkronize ediliyor...";
+      status.className = "text-xs font-semibold text-slate-500";
+
       try {
         const csvUrl = new URL(CSV_URL);
         csvUrl.searchParams.set("_", Date.now().toString());
         const res = await fetch(csvUrl, { cache: "no-store" });
         if (!res.ok) throw new Error(`CSV isteği başarısız: ${res.status}`);
         const text = await res.text();
-        const rows = text.split("\n").map(r => r.split(","));
-
-        // CSV'den gelen verileri işle
-        let newTasks = {};
-        DAYS_INFO.forEach(d => {
-          const matched = rows.filter(r => r[1] && r[1].trim().toLowerCase() === d.name.toLowerCase());
-          if (matched.length > 0) {
-            newTasks[d.name.toLowerCase()] = matched.map(m => ({
-              title: m[2] || "Görev",
-              sub: m[3] || "",
-              done: (m[4] || "").toLowerCase().includes("tamam")
-            }));
-          }
-        });
-        if (Object.keys(newTasks).length > 0) {
-          appState = newTasks;
-          saveState();
-          renderProgram();
+        const rows = parseCsv(text);
+        const header = rows.shift() || [];
+        const normalizedHeader = header.map(value => value.replace(/^\uFEFF/, "").trim().toLocaleLowerCase("tr-TR"));
+        if (
+          normalizedHeader[0] !== "bölüm" ||
+          normalizedHeader[1] !== "ders / gün" ||
+          !normalizedHeader[2] ||
+          !normalizedHeader[3] ||
+          !normalizedHeader[4]
+        ) {
+          throw new Error("Google Sheets CSV başlıkları beklenen biçimde değil.");
         }
+
+        const dayKeys = new Map(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), day.name.toLocaleLowerCase("tr-TR")]));
+        const newTasks = Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]));
+        const weeklyRows = rows.filter(row =>
+          (row[0] || "").trim().toLocaleLowerCase("tr-TR").includes("haftalık program")
+        );
+
+        weeklyRows.forEach(row => {
+          const dayKey = dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"));
+          if (!dayKey) return;
+
+          const title = (row[2] || "").trim();
+          const sub = (row[3] || "").trim();
+          if (!title && !sub) return;
+
+          newTasks[dayKey].push({
+            title: title || sub,
+            sub: title && sub ? sub : "",
+            done: (row[4] || "").trim().toLocaleLowerCase("tr-TR").includes("tamam")
+          });
+        });
+
+        const missingDays = DAYS_INFO
+          .filter(day => newTasks[day.name.toLocaleLowerCase("tr-TR")].length === 0)
+          .map(day => day.name);
+        if (missingDays.length > 0) {
+          throw new Error(`Haftalık programda gün verisi eksik: ${missingDays.join(", ")}`);
+        }
+
+        const previousState = appState;
+        appState = newTasks;
+        try {
+          renderProgram();
+          saveState();
+        } catch (error) {
+          appState = previousState;
+          renderProgram();
+          throw error;
+        }
+
+        status.textContent = "Başarıyla senkronize edildi";
+        status.className = "text-xs font-semibold text-emerald-700";
+        return true;
       } catch (e) {
         console.error("Senkronizasyon hatası:", e);
+        status.textContent = "Senkronizasyonda hata oldu";
+        status.className = "text-xs font-semibold text-rose-600";
+        return false;
+      } finally {
+        button.disabled = false;
       }
     }
 
@@ -302,7 +573,10 @@
       document.getElementById('nav-' + tab).className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
     }
 
+    renderProfile();
+    document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
     renderProgram();
+    if (appSettings.syncOnLoad) fetchSheetData();
   </script>
 </body>
 </html>
