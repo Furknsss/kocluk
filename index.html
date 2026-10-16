@@ -3,149 +3,241 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Furkan | Derece Karargâhı</title>
+  <title>Furkan | Program</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
-    .baykus-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; position: relative; transition: all 0.15s ease; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-    .baykus-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
-    .baykus-card.completed { background-color: #f0fdf4; border-color: #bbf7d0; }
-    .baykus-card.completed .card-title { text-decoration: line-through; color: #15803d; }
-    .col-border { border-right: 1px solid #e2e8f0; background: #fafafa; }
-    .col-border:last-child { border-right: none; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #ffffff;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+    }
+    /* Baykuş Orijinal Gri Kart Stili */
+    .baykus-card {
+      background-color: #f4f5f7;
+      border: 1px solid #e4e4e7;
+      border-radius: 6px;
+      padding: 12px 14px;
+      position: relative;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .baykus-card:hover {
+      background-color: #ffffff;
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .baykus-card.completed {
+      background-color: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .baykus-card.completed .card-title {
+      text-decoration: line-through;
+      color: #15803d;
+    }
+    .col-border {
+      border-right: 1px solid #f1f5f9;
+      background: #ffffff;
+    }
+    .col-border:last-child {
+      border-right: none;
+    }
     ::-webkit-scrollbar { height: 6px; width: 6px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- ÜST BAR -->
-  <header class="border-b border-slate-200 px-8 py-3.5 flex items-center justify-between bg-white sticky top-0 z-50 shadow-xs">
-    <div class="flex items-center space-x-6">
-      <div class="flex items-center space-x-2.5 font-extrabold text-slate-900 text-base">
-        <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm shadow-sm">🎯</span>
-        <span>YKS Derece Karargâhı</span>
+  <!-- ÜST NAVİGASYON (BAYKUŞ BİREBİR) -->
+  <header class="border-b border-slate-200 px-8 py-3.5 flex items-center justify-between bg-white sticky top-0 z-50">
+    <div class="flex items-center space-x-8">
+      <div class="flex items-center space-x-2 cursor-pointer">
+        <svg class="w-7 h-7 text-slate-900" viewBox="0 0 36 36" fill="currentColor">
+          <path d="M18 3C10.8 3 5 8.8 5 16c0 5.2 3.1 9.7 7.6 11.8L18 33l5.4-5.2C27.9 25.7 31 21.2 31 16c0-7.2-5.8-13-13-13zm-4.5 15.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm9 0c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
+        </svg>
       </div>
-      <nav class="hidden sm:flex space-x-2 text-xs font-semibold bg-slate-100 p-1 rounded-lg">
-        <button id="btn-todo" onclick="switchTab('todo')" class="px-4 py-1.5 rounded-md bg-white text-indigo-600 shadow-xs transition">To-Do Pano</button>
-        <button id="btn-analiz" onclick="switchTab('analiz')" class="px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">Kaynak &amp; İlerleme</button>
-        <button id="btn-deneme" onclick="switchTab('deneme')" class="px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">Deneme Röntgeni</button>
+      <nav class="flex items-center space-x-6 text-[13px] font-bold">
+        <button onclick="switchTab('program')" id="nav-program" class="text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1">Program</button>
+        <button onclick="switchTab('analiz')" id="nav-analiz" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Kaynak &amp; İlerleme</button>
+        <button onclick="switchTab('deneme')" id="nav-deneme" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Deneme Röntgeni</button>
       </nav>
     </div>
 
+    <!-- Sağ Profil -->
     <div class="flex items-center space-x-3">
-      <button onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-indigo-600 transition flex items-center gap-1.5">
-        🔄 Canlı Senkronize Et
-      </button>
+      <span class="text-xs font-semibold text-slate-700">Furkan (İTÜ Hedef)</span>
       <div class="w-8 h-8 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center">F</div>
     </div>
   </header>
 
-  <!-- ALT BİLGİ BARI -->
-  <section class="px-8 py-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between text-xs">
-    <div class="flex items-center space-x-3">
-      <span class="font-bold text-slate-800">1. Ay / 1. Hafta (16 Ekim - 18 Ekim Mini Kampı)</span>
-      <span class="text-slate-300">|</span>
-      <span class="text-indigo-600 font-semibold">Aktif Sistem: 345 Allstar &amp; Eyüp B. Geometri Kampı</span>
+  <!-- ÖĞRENCİ & HAFTA SEÇİM BARI -->
+  <section class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center space-x-3">
+        <span class="text-slate-400 text-sm font-bold">&lt;</span>
+        <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">F</div>
+        <div>
+          <div class="text-xs font-bold text-slate-800 leading-none">Furkan</div>
+          <div class="text-[11px] text-slate-400 font-medium mt-0.5">Tablolar • Hedef: İTÜ Elektrik (İlk 5.000)</div>
+        </div>
+      </div>
+      <button onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-indigo-600 hover:bg-slate-50 flex items-center gap-1.5">
+        🔄 Senkronize Et
+      </button>
     </div>
-    <div class="text-slate-500 font-medium">
-      Haftalık Hedef: <strong class="text-slate-900">750 Soru / 45 Saat</strong>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
+        1. Ay (12 Ekim - 08 Kasım 2026)
+      </div>
+      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
+        1. Hafta (12 Ekim - 18 Ekim Mini Kampı)
+      </div>
     </div>
   </section>
 
-  <!-- KANBAN PANO GÖRÜNÜMÜ -->
-  <main id="view-todo" class="flex-1 px-4 py-4 overflow-x-auto">
-    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1300px] bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"></div>
+  <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
+  <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
+    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px]">
+      <!-- JS ile doldurulur -->
+    </div>
   </main>
 
-  <!-- KAYNAK TAKİP SEKMESİ -->
+  <!-- KAYNAK & İLERLEME -->
   <main id="view-analiz" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
-    <h2 class="text-base font-extrabold text-slate-900 mb-4">📚 Soru Bankası &amp; İlerleme Envanteri</h2>
+    <h2 class="text-base font-bold text-slate-800 mb-4">📚 345 Allstar &amp; Soru Bankası Envanteri</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-2xs">
+      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
         <div class="font-bold text-sm text-slate-900">345 Sıfır Risk Problemler</div>
-        <div class="text-xs text-slate-600 mt-1">Grafik Problemleri ve Rutin Olmayan Sorular (Kamp Aktif).</div>
+        <div class="text-xs text-slate-600 mt-1">Grafik Problemleri ve Rutin Olmayan Sorular aktif.</div>
       </div>
-      <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-2xs">
-        <div class="font-bold text-sm text-slate-900">Eyüp B. Geometri VDD + SB &amp; 345 Geometri</div>
-        <div class="text-xs text-slate-600 mt-1">İkizkenar, Eşkenar, Açıortay, Benzerlik Mini Kampı.</div>
+      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+        <div class="font-bold text-sm text-slate-900">Eyüp B. Geometri VDD + SB</div>
+        <div class="text-xs text-slate-600 mt-1">16-18 Ekim Mini Kampı (İkizkenar, Eşkenar, Açıortay, Benzerlik).</div>
       </div>
     </div>
   </main>
 
   <!-- DENEME RÖNTGENİ -->
   <main id="view-deneme" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
-    <h2 class="text-base font-extrabold text-slate-900 mb-4">📊 Deneme Sınavları &amp; Net Gelişim Röntgeni</h2>
-    <div class="space-y-3">
-      <div class="border border-slate-200 rounded-xl p-4 flex items-center justify-between bg-white shadow-2xs">
-        <div>
-          <span class="text-[11px] font-bold text-slate-400">16 Ekim 2026</span>
-          <div class="font-bold text-sm text-slate-900">345 TYT Kurumsal Deneme - 1</div>
-        </div>
-        <div class="text-right">
-          <div class="text-lg font-extrabold text-indigo-600">78.5 Net</div>
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Önceki: 70.0 Net</span>
-        </div>
+    <h2 class="text-base font-bold text-slate-800 mb-4">📊 Deneme Sınavları &amp; Net Gelişim Röntgeni</h2>
+    <div class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-white">
+      <div>
+        <div class="font-bold text-sm text-slate-900">345 TYT Kurumsal Deneme - 1</div>
+        <div class="text-xs text-slate-500 mt-0.5">Türkçe: 33.5 | Sosyal: 15.5 | Mat: 16.5 | Fen: 13.0</div>
+      </div>
+      <div class="text-right">
+        <div class="text-lg font-extrabold text-indigo-600">78.5 Net</div>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Önceki: 70.0 Net</span>
       </div>
     </div>
   </main>
 
   <script>
-    // SENİN CANLI E-TABLO CSV BAĞLANTIN
+    // CSV URL BAĞLANTIN (Canlı Senkron İçin)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
 
-    const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+    const DAYS_INFO = [
+      { name: "Pazartesi", date: "12", time: "6 saat 00 dakika" },
+      { name: "Salı", date: "13", time: "6 saat 15 dakika" },
+      { name: "Çarşamba", date: "14", time: "6 saat 40 dakika" },
+      { name: "Perşembe", date: "15", time: "6 saat 30 dakika" },
+      { name: "Cuma", date: "16", time: "6 saat 45 dakika" },
+      { name: "Cumartesi", date: "17", time: "7 saat 15 dakika" },
+      { name: "Pazar", date: "18", time: "6 saat 30 dakika" }
+    ];
 
-    async function fetchSheetData() {
-      try {
-        const res = await fetch(CSV_URL);
-        const text = await res.text();
-        const rows = text.split("\n").map(r => r.split(","));
+    // Varsayılan Gerçek Kamp Verileri (CSV okunamazsa veya ilk açılışta)
+    const DEFAULT_DATA = {
+      "pazartesi": [
+        { title: "345 Sıfır Risk", sub: "Problemler (Sayı-Kesir) - 2 Test", done: true },
+        { title: "Eyüp B. VDD", sub: "Geometri Video 1-3 (Dik Üçgen)", done: true },
+        { title: "Eyüp B. SB", sub: "Geometri SB Test 1-3 Çözümü", done: true }
+      ],
+      "salı": [
+        { title: "345 Sıfır Risk", sub: "Problemler (Yaş & İşçi) - 2 Test", done: true },
+        { title: "Eyüp B. VDD", sub: "Geometri Video 4-6 (Özel Üçgenler)", done: true },
+        { title: "345 Geometri SB", sub: "Özel Üçgenler Test 4-6", done: true }
+      ],
+      "çarşamba": [
+        { title: "345 Sıfır Risk", sub: "Problemler (Hareket Problemleri)", done: true },
+        { title: "3D AYT VDD", sub: "Polinomlar Video 1-4", done: true },
+        { title: "345 AYT Mat", sub: "Polinomlar Test 1-3", done: true },
+        { title: "Eyüp B. SB", sub: "Geometri SB 1 Yorum Testleri", done: true }
+      ],
+      "perşembe": [
+        { title: "345 Sıfır Risk", sub: "Problemler (Yüzde-Kar-Zarar) - 3 Test", done: true },
+        { title: "3D AYT VDD", sub: "Polinomlar Video 5-6", done: true },
+        { title: "345 Geometri SB", sub: "ÖSYM Tadında Testler", done: true }
+      ],
+      "cuma": [
+        { title: "345 Sıfır Risk", sub: "Grafik Problemleri (Kalan Testler)", done: false },
+        { title: "Eyüp B. VDD", sub: "Geometri Kampı: İkizkenar & Eşkenar", done: false },
+        { title: "Eyüp B. SB", sub: "Geometri SB İkizkenar & Eşkenar Testleri", done: false },
+        { title: "345 Allstar", sub: "Gün Sonu & İkiz Soru Analizi", done: false }
+      ],
+      "cumartesi": [
+        { title: "Eyüp B. VDD", sub: "Geometri Kampı: Açıortay & Kenarortay", done: false },
+        { title: "Eyüp B. SB + 345", sub: "Açıortay/Kenarortay Testleri (4 Test)", done: false },
+        { title: "345 Sıfır Risk", sub: "Rutin Olmayan Problemler", done: false },
+        { title: "345 AYT Mat", sub: "Polinomlar ÖSYM Tadında Testler", done: false }
+      ],
+      "pazar": [
+        { title: "Kurumsal Deneme", sub: "Sabah 10:00 Tam Süreli TYT Denemesi", done: false },
+        { title: "Deneme Röntgeni", sub: "Yanlış & Boş Analizi + İkiz Soru Üretimi", done: false },
+        { title: "Eyüp B. VDD", sub: "Geometri Kampı: Benzerlik (Kapanış)", done: false },
+        { title: "Eyüp B. SB", sub: "Geometri SB Benzerlik Testleri", done: false }
+      ]
+    };
 
-        // CSV verisini parse et ve render et
-        renderFromCsv(rows);
-      } catch (e) {
-        console.error("Tablo yüklenirken hata oluştu:", e);
-      }
+    let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || DEFAULT_DATA;
+
+    function saveState() {
+      localStorage.setItem("furkan_program_state", JSON.stringify(appState));
     }
 
-    function renderFromCsv(rows) {
+    function renderProgram() {
       const grid = document.getElementById("kanban-grid");
       grid.innerHTML = "";
 
-      DAYS.forEach((dayName, idx) => {
+      DAYS_INFO.forEach(d => {
         const col = document.createElement("div");
-        col.className = "col-border p-3 flex flex-col";
+        col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
 
         let html = `
-          <div class="text-center pb-3 mb-2 border-b border-slate-200">
-            <div class="text-xs font-bold text-slate-500">${dayName}</div>
-            <div class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 py-0.5 px-2 rounded-full inline-block mt-1">Canlı Senkron</div>
+          <!-- Baykuş Gün Başlığı (Gün + Tarih + Toplam Süre) -->
+          <div class="text-center pb-3 mb-2 border-b border-slate-100">
+            <div class="text-xs text-slate-400 font-medium">${d.name}</div>
+            <div class="text-lg font-bold text-slate-800 my-0.5">${d.date}</div>
+            <div class="text-[10px] text-slate-400 font-medium">Toplam süre: ${d.time}</div>
           </div>
-          <div class="space-y-2.5 flex-1 mt-2">
+
+          <!-- + Görev Ekle Butonu -->
+          <button onclick="addTask('${d.name}')" class="w-full py-1.5 mb-3 text-center text-xs font-semibold text-indigo-600 hover:bg-indigo-50/60 rounded transition">
+            + Görev Ekle
+          </button>
+
+          <!-- Görev Kartları -->
+          <div class="space-y-2.5 flex-1">
         `;
 
-        // CSV'den bu güne ait satırları filtrele (Örn: 2. sütun gün adı ise)
-        const dayRows = rows.filter(r => r[1] && r[1].trim().toLowerCase() === dayName.toLowerCase());
+        const key = d.name.toLowerCase();
+        const tasks = appState[key] || [];
 
-        if (dayRows.length > 0) {
-          dayRows.forEach(r => {
-            const title = r[2] || "Görev";
-            const detail = r[3] || "";
-            const status = (r[4] || "").toLowerCase();
-            const isDone = status.includes("tamam") || status.includes("bitti");
-
-            html += `
-              <div onclick="this.classList.toggle('completed')" class="baykus-card ${isDone ? 'completed' : ''}">
-                <div class="font-bold text-xs text-slate-900 leading-tight">${title}</div>
-                <div class="text-[11px] text-slate-600 mt-1 font-medium leading-relaxed">${detail}</div>
+        tasks.forEach((t, tIdx) => {
+          html += `
+            <div onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}">
+              <div class="flex items-start justify-between">
+                <span class="card-title font-bold text-[12px] text-slate-900 leading-snug">${t.title}</span>
+                <span class="text-slate-300 font-bold text-xs">•••</span>
               </div>
-            `;
-          });
-        } else {
-          html += `<div class="text-center text-xs text-slate-400 py-6">Bu gün için planlanan görev bulunmuyor.</div>`;
-        }
+              <div class="text-[11px] text-slate-500 font-medium mt-1 leading-tight">${t.sub}</div>
+            </div>
+          `;
+        });
 
         html += `</div>`;
         col.innerHTML = html;
@@ -153,17 +245,61 @@
       });
     }
 
-    function switchTab(tab) {
-      ['todo', 'analiz', 'deneme'].forEach(t => {
-        document.getElementById('view-' + t).classList.add('hidden');
-        document.getElementById('btn-' + t).className = "px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition";
-      });
-      document.getElementById('view-' + tab).classList.remove('hidden');
-      document.getElementById('btn-' + tab).className = "px-4 py-1.5 rounded-md bg-white text-indigo-600 shadow-xs font-semibold transition";
+    function toggleTask(dayKey, tIdx) {
+      appState[dayKey][tIdx].done = !appState[dayKey][tIdx].done;
+      saveState();
+      renderProgram();
     }
 
-    // Sayfa açıldığında doğrudan e-tablodan çek
-    fetchSheetData();
+    function addTask(dayName) {
+      const key = dayName.toLowerCase();
+      const title = prompt("Ders / Kaynak Adı (Örn: 345 Fizik):");
+      if (!title) return;
+      const sub = prompt("Konu / Detay (Örn: Kuvvet ve Hareket Test 1-2):") || "Çalışma";
+      if (!appState[key]) appState[key] = [];
+      appState[key].push({ title, sub, done: false });
+      saveState();
+      renderProgram();
+    }
+
+    async function fetchSheetData() {
+      try {
+        const res = await fetch(CSV_URL);
+        const text = await res.text();
+        const rows = text.split("\n").map(r => r.split(","));
+
+        // CSV'den gelen verileri işle
+        let newTasks = {};
+        DAYS_INFO.forEach(d => {
+          const matched = rows.filter(r => r[1] && r[1].trim().toLowerCase() === d.name.toLowerCase());
+          if (matched.length > 0) {
+            newTasks[d.name.toLowerCase()] = matched.map(m => ({
+              title: m[2] || "Görev",
+              sub: m[3] || "",
+              done: (m[4] || "").toLowerCase().includes("tamam")
+            }));
+          }
+        });
+        if (Object.keys(newTasks).length > 0) {
+          appState = newTasks;
+          saveState();
+          renderProgram();
+        }
+      } catch (e) {
+        console.error("Senkronizasyon hatası:", e);
+      }
+    }
+
+    function switchTab(tab) {
+      ['program', 'analiz', 'deneme'].forEach(t => {
+        document.getElementById('view-' + t).classList.add('hidden');
+        document.getElementById('nav-' + t).className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
+      });
+      document.getElementById('view-' + tab).classList.remove('hidden');
+      document.getElementById('nav-' + tab).className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
+    }
+
+    renderProgram();
   </script>
 </body>
 </html>
