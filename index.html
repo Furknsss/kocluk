@@ -163,24 +163,6 @@
 
   <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
   <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
-    <section id="coaching-summary" class="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Haftalık ilerleme özeti">
-      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Görevler</div>
-        <div id="summary-tasks" class="mt-0.5 text-sm font-bold text-slate-800">0 / 0 tamamlandı</div>
-      </div>
-      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Videolar</div>
-        <div id="summary-videos" class="mt-0.5 text-sm font-bold text-slate-800">0 tamamlandı</div>
-      </div>
-      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Sorular</div>
-        <div id="summary-questions" class="mt-0.5 text-sm font-bold text-slate-800">0 çözüldü</div>
-      </div>
-      <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Doğruluk</div>
-        <div id="summary-accuracy" class="mt-0.5 text-sm font-bold text-slate-800">Henüz veri yok</div>
-      </div>
-    </section>
     <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px] sm:min-w-[1260px] lg:min-w-0">
       <!-- JS ile doldurulur -->
     </div>
@@ -581,27 +563,6 @@
       }
       if (value.coachingNote.trim()) parts.push(`Not: ${value.coachingNote}`);
       return parts.join(" · ");
-    }
-
-    function updateCoachingSummary() {
-      const tasks = Object.values(appState).flat();
-      const completedTasks = tasks.filter(task => task.done || /tamam|bitti|completed|done/i.test(task.status || "")).length;
-      const progress = tasks.map(task => normalizeTaskProgress(task.progress));
-      const completedVideos = progress.filter(item => item.videoStatus === "completed").length;
-      const solvedQuestions = progress.reduce((sum, item) => sum + (item.questionsSolved || 0), 0);
-      const plannedQuestions = progress.reduce((sum, item) => sum + (item.questionsTotal || 0), 0);
-      const correct = progress.reduce((sum, item) => sum + (item.correctAnswers || 0), 0);
-      const incorrect = progress.reduce((sum, item) => sum + (item.incorrectAnswers || 0), 0);
-      const attempted = correct + incorrect;
-
-      document.getElementById("summary-tasks").textContent = `${completedTasks} / ${tasks.length} tamamlandı`;
-      document.getElementById("summary-videos").textContent = `${completedVideos} tamamlandı`;
-      document.getElementById("summary-questions").textContent = plannedQuestions
-        ? `${solvedQuestions} / ${plannedQuestions} çözüldü`
-        : `${solvedQuestions} çözüldü`;
-      document.getElementById("summary-accuracy").textContent = attempted
-        ? `${Math.round((correct / attempted) * 100)}% · ${correct}D / ${incorrect}Y`
-        : "Henüz veri yok";
     }
 
     function escapeHtml(value) {
@@ -1143,7 +1104,6 @@
         col.innerHTML = html;
         grid.appendChild(col);
       });
-      updateCoachingSummary();
     }
 
     function getTaskDropPosition(x, y) {
