@@ -407,6 +407,10 @@
 
         const tasks = appState[key] || [];
 
+        if (tasks.length === 0) {
+          html += `<div class="py-4 text-center text-[11px] text-slate-400">Excel’de bu gün için görev yok</div>`;
+        }
+
         tasks.forEach((t, tIdx) => {
           const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
           html += `
@@ -530,6 +534,7 @@
         );
         if (weeklyRows.length === 0) throw new Error("Excel’de haftalık program satırları bulunamadı.");
 
+        let importedTaskCount = 0;
         weeklyRows.forEach(row => {
           const dayKey = dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"));
           if (!dayKey) return;
@@ -562,14 +567,10 @@
             goal: (row[5] || "").trim(),
             note: (row[6] || "").trim()
           });
+          importedTaskCount += 1;
         });
 
-        const missingDays = DAYS_INFO
-          .filter(day => newTasks[day.name.toLocaleLowerCase("tr-TR")].length === 0)
-          .map(day => day.name);
-        if (missingDays.length > 0) {
-          throw new Error(`Haftalık programda gün verisi eksik: ${missingDays.join(", ")}`);
-        }
+        if (importedTaskCount === 0) throw new Error("Haftalık programda geçerli görev bulunamadı.");
 
         const previousState = appState;
         const previousScheduleMeta = scheduleMeta;
