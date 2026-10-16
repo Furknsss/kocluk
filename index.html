@@ -3,159 +3,148 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Baykuş YKS Planlayıcı</title>
+  <title>Furkan | Derece Karargâhı</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #1e293b; }
-    .baykus-col { min-width: 175px; width: 100%; }
-    .baykus-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 12px 14px;
-      transition: all 0.15s ease;
-      cursor: pointer;
-    }
-    .baykus-card:hover {
-      background: #ffffff;
-      border-color: #cbd5e1;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .baykus-card.done {
-      opacity: 0.55;
-      background: #f1f5f9;
-      text-decoration: line-through;
-    }
-    /* İnce kaydırma çubuğu */
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
+    .baykus-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; position: relative; transition: all 0.15s ease; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+    .baykus-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
+    .baykus-card.completed { background-color: #f0fdf4; border-color: #bbf7d0; }
+    .baykus-card.completed .card-title { text-decoration: line-through; color: #15803d; }
+    .col-border { border-right: 1px solid #e2e8f0; background: #fafafa; }
+    .col-border:last-child { border-right: none; }
     ::-webkit-scrollbar { height: 6px; width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
-<body class="bg-white">
+<body class="min-h-screen flex flex-col">
 
-  <!-- Baykuş Orijinal Üst Bar -->
-  <header class="border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+  <!-- ÜST BAR -->
+  <header class="border-b border-slate-200 px-8 py-3.5 flex items-center justify-between bg-white sticky top-0 z-50 shadow-xs">
     <div class="flex items-center space-x-6">
-      <div class="flex items-center space-x-2 text-indigo-600 font-bold text-xl cursor-pointer">
-        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
-        <span class="text-slate-900 tracking-tight text-base font-semibold">Baykuş Koçluk</span>
+      <div class="flex items-center space-x-2.5 font-extrabold text-slate-900 text-base">
+        <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm shadow-sm">🎯</span>
+        <span>YKS Derece Karargâhı</span>
       </div>
-      <nav class="hidden sm:flex space-x-4 text-xs font-semibold text-slate-500">
-        <span class="text-indigo-600 border-b-2 border-indigo-600 pb-3 pt-1">To-Do List</span>
-        <span class="hover:text-slate-800 pb-3 pt-1 cursor-pointer">Denemelerim</span>
-        <span class="hover:text-slate-800 pb-3 pt-1 cursor-pointer">Analiz &amp; İlerleme</span>
+      <nav class="hidden sm:flex space-x-2 text-xs font-semibold bg-slate-100 p-1 rounded-lg">
+        <button id="btn-todo" onclick="switchTab('todo')" class="px-4 py-1.5 rounded-md bg-white text-indigo-600 shadow-xs transition">To-Do Pano</button>
+        <button id="btn-analiz" onclick="switchTab('analiz')" class="px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">Kaynak &amp; İlerleme</button>
+        <button id="btn-deneme" onclick="switchTab('deneme')" class="px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">Deneme Röntgeni</button>
       </nav>
     </div>
 
     <div class="flex items-center space-x-3">
-      <button onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition flex items-center gap-1.5">
-        <span>🔄</span> <span>Senkronize Et</span>
+      <button onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-indigo-600 transition flex items-center gap-1.5">
+        🔄 Canlı Senkronize Et
       </button>
-      <div class="flex items-center space-x-2">
-        <div class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs">F</div>
-        <span class="text-xs font-bold text-slate-800 hidden md:inline">Furkan (İTÜ Hedef)</span>
-      </div>
+      <div class="w-8 h-8 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center">F</div>
     </div>
   </header>
 
-  <!-- Filtre / Hafta Seçici Barı -->
-  <div class="border-b border-slate-100 px-6 py-2.5 flex items-center space-x-3 text-xs bg-slate-50/50">
-    <div class="px-3 py-1.5 bg-white border border-slate-200 rounded-md font-medium text-slate-700 shadow-2xs">
-      1. Hafta (16 Ekim - 22 Ekim)
+  <!-- ALT BİLGİ BARI -->
+  <section class="px-8 py-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between text-xs">
+    <div class="flex items-center space-x-3">
+      <span class="font-bold text-slate-800">1. Ay / 1. Hafta (16 Ekim - 18 Ekim Mini Kampı)</span>
+      <span class="text-slate-300">|</span>
+      <span class="text-indigo-600 font-semibold">Aktif Sistem: 345 Allstar &amp; Eyüp B. Geometri Kampı</span>
     </div>
-    <div class="text-slate-400">|</div>
-    <div class="text-slate-500 font-medium">Haftalık Hedef: <strong class="text-slate-800">750 Soru / 42 Saat</strong></div>
-  </div>
+    <div class="text-slate-500 font-medium">
+      Haftalık Hedef: <strong class="text-slate-900">750 Soru / 45 Saat</strong>
+    </div>
+  </section>
 
-  <!-- 7 Sütunlu Tam Baykuş Kanban Alanı -->
-  <main class="p-6 overflow-x-auto">
-    <div id="kanban-grid" class="grid grid-cols-7 gap-3 min-w-[1260px]">
-      <!-- JS ile doldurulacak -->
+  <!-- KANBAN PANO GÖRÜNÜMÜ -->
+  <main id="view-todo" class="flex-1 px-4 py-4 overflow-x-auto">
+    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1300px] bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden"></div>
+  </main>
+
+  <!-- KAYNAK TAKİP SEKMESİ -->
+  <main id="view-analiz" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
+    <h2 class="text-base font-extrabold text-slate-900 mb-4">📚 Soru Bankası &amp; İlerleme Envanteri</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-2xs">
+        <div class="font-bold text-sm text-slate-900">345 Sıfır Risk Problemler</div>
+        <div class="text-xs text-slate-600 mt-1">Grafik Problemleri ve Rutin Olmayan Sorular (Kamp Aktif).</div>
+      </div>
+      <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-2xs">
+        <div class="font-bold text-sm text-slate-900">Eyüp B. Geometri VDD + SB &amp; 345 Geometri</div>
+        <div class="text-xs text-slate-600 mt-1">İkizkenar, Eşkenar, Açıortay, Benzerlik Mini Kampı.</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- DENEME RÖNTGENİ -->
+  <main id="view-deneme" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
+    <h2 class="text-base font-extrabold text-slate-900 mb-4">📊 Deneme Sınavları &amp; Net Gelişim Röntgeni</h2>
+    <div class="space-y-3">
+      <div class="border border-slate-200 rounded-xl p-4 flex items-center justify-between bg-white shadow-2xs">
+        <div>
+          <span class="text-[11px] font-bold text-slate-400">16 Ekim 2026</span>
+          <div class="font-bold text-sm text-slate-900">345 TYT Kurumsal Deneme - 1</div>
+        </div>
+        <div class="text-right">
+          <div class="text-lg font-extrabold text-indigo-600">78.5 Net</div>
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Önceki: 70.0 Net</span>
+        </div>
+      </div>
     </div>
   </main>
 
   <script>
-    // SENİN ALDIĞIN CSV BAĞLANTISI:
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1-FkHn3f07aO3yU-YKS_PANEL_CSV/pub?output=csv"; // Buraya kendi CSV linkini yapıştır
+    // SENİN CANLI E-TABLO CSV BAĞLANTIN
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
 
-    const DAYS_DATA = [
-      { name: "Pazartesi", date: "12", time: "6 saat 15 dakika" },
-      { name: "Salı", date: "13", time: "6 saat 45 dakika" },
-      { name: "Çarşamba", date: "14", time: "7 saat 00 dakika" },
-      { name: "Perşembe", date: "15", time: "6 saat 30 dakika" },
-      { name: "Cuma", date: "16", time: "7 saat 15 dakika" },
-      { name: "Cumartesi", date: "17", time: "8 saat 00 dakika" },
-      { name: "Pazar", date: "18", time: "5 saat 30 dakika" }
-    ];
+    const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 
     async function fetchSheetData() {
-      const grid = document.getElementById("kanban-grid");
       try {
-        let rows = [];
-        if (CSV_URL.includes("docs.google.com")) {
-          const res = await fetch(CSV_URL);
-          const text = await res.text();
-          rows = text.split("\n").map(r => r.split(","));
-        }
-        renderBoard(rows);
+        const res = await fetch(CSV_URL);
+        const text = await res.text();
+        const rows = text.split("\n").map(r => r.split(","));
+
+        // CSV verisini parse et ve render et
+        renderFromCsv(rows);
       } catch (e) {
-        renderBoard([]);
+        console.error("Tablo yüklenirken hata oluştu:", e);
       }
     }
 
-    function renderBoard(rows) {
+    function renderFromCsv(rows) {
       const grid = document.getElementById("kanban-grid");
       grid.innerHTML = "";
 
-      DAYS_DATA.forEach(d => {
+      DAYS.forEach((dayName, idx) => {
         const col = document.createElement("div");
-        col.className = "baykus-col flex flex-col";
+        col.className = "col-border p-3 flex flex-col";
 
-        // Baykuş Header (Gün + Tarih + Süre)
         let html = `
-          <div class="text-center pb-3 mb-2 border-b border-slate-100">
-            <div class="text-xs text-slate-400 font-medium">${d.name}</div>
-            <div class="text-lg font-bold text-slate-800 leading-tight">${d.date}</div>
-            <div class="text-[10px] text-slate-400 font-medium">Toplam süre: ${d.time}</div>
+          <div class="text-center pb-3 mb-2 border-b border-slate-200">
+            <div class="text-xs font-bold text-slate-500">${dayName}</div>
+            <div class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 py-0.5 px-2 rounded-full inline-block mt-1">Canlı Senkron</div>
           </div>
-          <button class="w-full mb-3 py-1.5 text-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-md transition flex items-center justify-center gap-1">
-            <span class="text-base leading-none">+</span> Görev Ekle
-          </button>
-          <div class="space-y-2.5 flex-1">
+          <div class="space-y-2.5 flex-1 mt-2">
         `;
 
-        // E-Tablodaki görevleri eşleştir
-        const dayRows = rows.filter(r => r[1] && r[1].trim().toLowerCase() === d.name.toLowerCase());
+        // CSV'den bu güne ait satırları filtrele (Örn: 2. sütun gün adı ise)
+        const dayRows = rows.filter(r => r[1] && r[1].trim().toLowerCase() === dayName.toLowerCase());
 
         if (dayRows.length > 0) {
-          dayRows.forEach((r, idx) => {
-            const taskHeader = r[2] || "Ders";
-            const taskSub = r[3] || "";
+          dayRows.forEach(r => {
+            const title = r[2] || "Görev";
+            const detail = r[3] || "";
             const status = (r[4] || "").toLowerCase();
             const isDone = status.includes("tamam") || status.includes("bitti");
 
             html += `
-              <div class="baykus-card ${isDone ? 'done' : ''}" onclick="this.classList.toggle('done')">
-                <div class="flex items-start justify-between">
-                  <div class="font-bold text-[12px] text-slate-800 leading-snug">${taskHeader}</div>
-                  <span class="text-slate-300 hover:text-slate-500 text-xs font-bold leading-none">•••</span>
-                </div>
-                ${taskSub ? `<div class="text-[11px] text-slate-500 mt-1 font-medium leading-tight">${taskSub}</div>` : ''}
+              <div onclick="this.classList.toggle('completed')" class="baykus-card ${isDone ? 'completed' : ''}">
+                <div class="font-bold text-xs text-slate-900 leading-tight">${title}</div>
+                <div class="text-[11px] text-slate-600 mt-1 font-medium leading-relaxed">${detail}</div>
               </div>
             `;
           });
         } else {
-          // Gün boşsa sade placeholder kartlar (Baykuş stili)
-          html += `
-            <div class="baykus-card">
-              <div class="flex items-start justify-between">
-                <div class="font-bold text-[12px] text-slate-800">TYT - Matematik</div>
-                <span class="text-slate-300 text-xs font-bold">•••</span>
-              </div>
-              <div class="text-[11px] text-slate-500 mt-1">Soru Çözümü / Etüt</div>
-            </div>
-          `;
+          html += `<div class="text-center text-xs text-slate-400 py-6">Bu gün için planlanan görev bulunmuyor.</div>`;
         }
 
         html += `</div>`;
@@ -164,6 +153,16 @@
       });
     }
 
+    function switchTab(tab) {
+      ['todo', 'analiz', 'deneme'].forEach(t => {
+        document.getElementById('view-' + t).classList.add('hidden');
+        document.getElementById('btn-' + t).className = "px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition";
+      });
+      document.getElementById('view-' + tab).classList.remove('hidden');
+      document.getElementById('btn-' + tab).className = "px-4 py-1.5 rounded-md bg-white text-indigo-600 shadow-xs font-semibold transition";
+    }
+
+    // Sayfa açıldığında doğrudan e-tablodan çek
     fetchSheetData();
   </script>
 </body>
