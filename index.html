@@ -105,11 +105,19 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
-        1. Ay (12 Ekim - 08 Kasım 2026)
+      <div id="schedule-period-label" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
+        16 - 18 Ekim 2026
       </div>
-      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
-        1. Hafta (12 Ekim - 18 Ekim Mini Kampı)
+      <div id="schedule-description" class="text-xs text-slate-500">
+        3 Günlük Nokta Atışı Kampı • 345 Sıfır Risk, Eyüp B. ve Allstar soru çözümü
+      </div>
+      <div class="ml-auto flex items-center gap-1" role="group" aria-label="Program görünümü">
+        <button id="campaign-schedule-button" type="button" onclick="selectSchedule('campaign')" aria-pressed="true" class="rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+          16-18 Ekim Kampı
+        </button>
+        <button id="sheet-schedule-button" type="button" onclick="selectSchedule('sheet')" aria-pressed="false" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          Google Sheets Planı
+        </button>
       </div>
     </div>
   </section>
@@ -123,30 +131,29 @@
 
   <!-- KAYNAK & İLERLEME -->
   <main id="view-analiz" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
-    <h2 class="text-base font-bold text-slate-800 mb-4">📚 345 Allstar &amp; Soru Bankası Envanteri</h2>
+    <h2 class="text-base font-bold text-slate-800 mb-4">📚 Kaynak Envanteri &amp; Durum</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
-        <div class="font-bold text-sm text-slate-900">345 Sıfır Risk Problemler</div>
-        <div class="text-xs text-slate-600 mt-1">Grafik Problemleri ve Rutin Olmayan Sorular aktif.</div>
+        <div class="font-bold text-sm text-slate-900">345 Allstar GGÇK (4 Kitap)</div>
+        <div class="text-xs text-slate-600 mt-1">Konu anlatımları izlendi; bu hafta sonu Açıortay, Kenarortay, Benzerlik ve Açı-Kenar soruları çözülüyor.</div>
       </div>
       <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
-        <div class="font-bold text-sm text-slate-900">Eyüp B. Geometri VDD + SB</div>
-        <div class="text-xs text-slate-600 mt-1">16-18 Ekim Mini Kampı (İkizkenar, Eşkenar, Açıortay, Benzerlik).</div>
+        <div class="font-bold text-sm text-slate-900">345 Sıfır Risk Problemler &amp; Eyüp B. Geometri</div>
+        <div class="text-xs text-slate-600 mt-1">Grafik Problemleri tamamlanıyor; Eyüp B. SB eksik testleri eritiliyor.</div>
       </div>
     </div>
   </main>
 
   <!-- DENEME RÖNTGENİ -->
   <main id="view-deneme" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
-    <h2 class="text-base font-bold text-slate-800 mb-4">📊 Deneme Sınavları &amp; Net Gelişim Röntgeni</h2>
+    <h2 class="text-base font-bold text-slate-800 mb-4">📊 Deneme Sınavları &amp; Net Gelişim</h2>
     <div class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-white">
       <div>
-        <div class="font-bold text-sm text-slate-900">345 TYT Kurumsal Deneme - 1</div>
-        <div class="text-xs text-slate-500 mt-0.5">Türkçe: 33.5 | Sosyal: 15.5 | Mat: 16.5 | Fen: 13.0</div>
+        <div class="font-bold text-sm text-slate-900">Mezun Başlangıç (1 Eylül)</div>
+        <div class="text-xs text-slate-500 mt-0.5">Sadece Geometri ve Problem Çalışması ile Başlandı</div>
       </div>
       <div class="text-right">
-        <div class="text-lg font-extrabold text-indigo-600">78.5 Net</div>
-        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Önceki: 70.0 Net</span>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">Aktif Altyapı Kuruldu</span>
       </div>
     </div>
   </main>
@@ -208,66 +215,89 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
 
     const DAYS_INFO = [
-      { name: "Pazartesi", date: "12", time: "6 saat 00 dakika" },
-      { name: "Salı", date: "13", time: "6 saat 15 dakika" },
-      { name: "Çarşamba", date: "14", time: "6 saat 40 dakika" },
-      { name: "Perşembe", date: "15", time: "6 saat 30 dakika" },
-      { name: "Cuma", date: "16", time: "6 saat 45 dakika" },
-      { name: "Cumartesi", date: "17", time: "7 saat 15 dakika" },
-      { name: "Pazar", date: "18", time: "6 saat 30 dakika" }
+      { name: "Pazartesi", date: "12", time: "Geçmiş" },
+      { name: "Salı", date: "13", time: "Geçmiş" },
+      { name: "Çarşamba", date: "14", time: "Geçmiş" },
+      { name: "Perşembe", date: "15", time: "Geçmiş" },
+      { name: "Cuma", date: "16", time: "6 saat 45 dk" },
+      { name: "Cumartesi", date: "17", time: "7 saat 15 dk" },
+      { name: "Pazar", date: "18", time: "6 saat 30 dk" }
     ];
 
-    // Varsayılan Gerçek Kamp Verileri (CSV okunamazsa veya ilk açılışta)
-    const DEFAULT_DATA = {
+    const CAMPAIGN_DATA = {
       "pazartesi": [
-        { title: "345 Sıfır Risk", sub: "Problemler (Sayı-Kesir) - 2 Test", done: true },
-        { title: "Eyüp B. VDD", sub: "Geometri Video 1-3 (Dik Üçgen)", done: true },
-        { title: "Eyüp B. SB", sub: "Geometri SB Test 1-3 Çözümü", done: true }
+        { title: "Geçmiş Bilgi", sub: "1 Eylül Başlangıç (Geometri & Problem)", done: true }
       ],
       "salı": [
-        { title: "345 Sıfır Risk", sub: "Problemler (Yaş & İşçi) - 2 Test", done: true },
-        { title: "Eyüp B. VDD", sub: "Geometri Video 4-6 (Özel Üçgenler)", done: true },
-        { title: "345 Geometri SB", sub: "Özel Üçgenler Test 4-6", done: true }
+        { title: "Geçmiş Bilgi", sub: "3D VDD Problemler Tamamlandı", done: true }
       ],
       "çarşamba": [
-        { title: "345 Sıfır Risk", sub: "Problemler (Hareket Problemleri)", done: true },
-        { title: "3D AYT VDD", sub: "Polinomlar Video 1-4", done: true },
-        { title: "345 AYT Mat", sub: "Polinomlar Test 1-3", done: true },
-        { title: "Eyüp B. SB", sub: "Geometri SB 1 Yorum Testleri", done: true }
+        { title: "Geçmiş Bilgi", sub: "345 Sıfır Risk (Grafik Hariç Bitti)", done: true }
       ],
       "perşembe": [
-        { title: "345 Sıfır Risk", sub: "Problemler (Yüzde-Kar-Zarar) - 3 Test", done: true },
-        { title: "3D AYT VDD", sub: "Polinomlar Video 5-6", done: true },
-        { title: "345 Geometri SB", sub: "ÖSYM Tadında Testler", done: true }
+        { title: "Geçmiş Bilgi", sub: "Eyüp B. SB Açılar & Dik Üçgen Bitti", done: true }
       ],
       "cuma": [
-        { title: "345 Sıfır Risk", sub: "Grafik Problemleri (Kalan Testler)", done: false },
-        { title: "Eyüp B. VDD", sub: "Geometri Kampı: İkizkenar & Eşkenar", done: false },
-        { title: "Eyüp B. SB", sub: "Geometri SB İkizkenar & Eşkenar Testleri", done: false },
-        { title: "345 Allstar", sub: "Gün Sonu & İkiz Soru Analizi", done: false }
+        { title: "345 Sıfır Risk", sub: "Grafik Problemleri (Kalan Son Testler)", done: false },
+        { title: "Eyüp B. Geometri SB", sub: "İkizkenar & Eşkenar Kalan Testler", done: false },
+        { title: "345 Allstar GGÇK", sub: "Açıortay Soru Çözümü (Konu bitti)", done: false },
+        { title: "345 Allstar GGÇK", sub: "Benzerlik Soru Çözümü (Konu bitti)", done: false }
       ],
       "cumartesi": [
-        { title: "Eyüp B. VDD", sub: "Geometri Kampı: Açıortay & Kenarortay", done: false },
-        { title: "Eyüp B. SB + 345", sub: "Açıortay/Kenarortay Testleri (4 Test)", done: false },
-        { title: "345 Sıfır Risk", sub: "Rutin Olmayan Problemler", done: false },
-        { title: "345 AYT Mat", sub: "Polinomlar ÖSYM Tadında Testler", done: false }
+        { title: "Eyüp B. Geometri SB", sub: "Açıortay & Kenarortay Testleri", done: false },
+        { title: "345 Allstar GGÇK", sub: "Kenarortay Soru Çözümü", done: false },
+        { title: "345 Sıfır Risk", sub: "Rutin Olmayan Problemler Taraması", done: false },
+        { title: "345 Allstar GGÇK", sub: "Açı-Kenar Bağlantıları Soru Çözümü", done: false }
       ],
       "pazar": [
-        { title: "Kurumsal Deneme", sub: "Sabah 10:00 Tam Süreli TYT Denemesi", done: false },
-        { title: "Deneme Röntgeni", sub: "Yanlış & Boş Analizi + İkiz Soru Üretimi", done: false },
-        { title: "Eyüp B. VDD", sub: "Geometri Kampı: Benzerlik (Kapanış)", done: false },
-        { title: "Eyüp B. SB", sub: "Geometri SB Benzerlik Testleri", done: false }
+        { title: "Eyüp B. Geometri SB", sub: "Benzerlik Kazanım & 1 Yorum Testleri", done: false },
+        { title: "345 Allstar GGÇK", sub: "Boş Kalan Benzerlik Testlerinin Eritilmesi", done: false },
+        { title: "Koçluk Görüşmesi", sub: "Saat 21:00 Haftalık Değerlendirme & AYT Planı", done: false }
       ]
     };
 
-    let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || DEFAULT_DATA;
+    let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || {};
+    let campaignState = JSON.parse(localStorage.getItem("furkan_campaign_state")) || CAMPAIGN_DATA;
+    let activeSchedule = localStorage.getItem("furkan_active_schedule") === "sheet" ? "sheet" : "campaign";
     const DEFAULT_PROFILE = { name: "Furkan", target: "İTÜ Elektrik (İlk 5.000)", photo: "" };
     let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: false, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     let selectedProfilePhoto = "";
 
     function saveState() {
-      localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+      if (activeSchedule === "campaign") {
+        localStorage.setItem("furkan_campaign_state", JSON.stringify(campaignState));
+      } else {
+        localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+      }
+    }
+
+    function selectSchedule(schedule) {
+      if (schedule !== "campaign" && schedule !== "sheet") return;
+      activeSchedule = schedule;
+      localStorage.setItem("furkan_active_schedule", activeSchedule);
+      updateScheduleControls();
+      renderProgram();
+    }
+
+    function updateScheduleControls() {
+      const isCampaign = activeSchedule === "campaign";
+      const campaignButton = document.getElementById("campaign-schedule-button");
+      const sheetButton = document.getElementById("sheet-schedule-button");
+      campaignButton.setAttribute("aria-pressed", String(isCampaign));
+      sheetButton.setAttribute("aria-pressed", String(!isCampaign));
+      campaignButton.className = isCampaign
+        ? "rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700"
+        : "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50";
+      sheetButton.className = isCampaign
+        ? "rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+        : "rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700";
+      document.getElementById("schedule-period-label").textContent = isCampaign
+        ? "16 - 18 Ekim 2026"
+        : "Google Sheets planı";
+      document.getElementById("schedule-description").textContent = isCampaign
+        ? "3 Günlük Nokta Atışı Kampı • 345 Sıfır Risk, Eyüp B. ve Allstar soru çözümü"
+        : "Google Sheets’teki haftalık program • Tarih ve süre bilgisi kaynak tabloda yok";
     }
 
     function renderProfile() {
@@ -394,8 +424,8 @@
           <!-- Baykuş Gün Başlığı (Gün + Tarih + Toplam Süre) -->
           <div class="text-center pb-3 mb-2 border-b border-slate-100">
             <div class="text-xs text-slate-400 font-medium">${d.name}</div>
-            <div class="text-lg font-bold text-slate-800 my-0.5">${d.date}</div>
-            <div class="text-[10px] text-slate-400 font-medium">Toplam süre: ${d.time}</div>
+            <div class="text-lg font-bold text-slate-800 my-0.5">${activeSchedule === "campaign" ? d.date : "—"}</div>
+            <div class="text-[10px] text-slate-400 font-medium">${activeSchedule === "campaign" ? `Toplam süre: ${d.time}` : "Google Sheets planı"}</div>
           </div>
 
           <!-- + Görev Ekle Butonu -->
@@ -408,7 +438,8 @@
         `;
 
         const key = d.name.toLowerCase();
-        const tasks = appState[key] || [];
+        const scheduleState = activeSchedule === "campaign" ? campaignState : appState;
+        const tasks = scheduleState[key] || [];
 
         tasks.forEach((t, tIdx) => {
           html += `
@@ -429,7 +460,8 @@
     }
 
     function toggleTask(dayKey, tIdx) {
-      appState[dayKey][tIdx].done = !appState[dayKey][tIdx].done;
+      const scheduleState = activeSchedule === "campaign" ? campaignState : appState;
+      scheduleState[dayKey][tIdx].done = !scheduleState[dayKey][tIdx].done;
       saveState();
       renderProgram();
     }
@@ -439,8 +471,9 @@
       const title = prompt("Ders / Kaynak Adı (Örn: 345 Fizik):");
       if (!title) return;
       const sub = prompt("Konu / Detay (Örn: Kuvvet ve Hareket Test 1-2):") || "Çalışma";
-      if (!appState[key]) appState[key] = [];
-      appState[key].push({ title, sub, done: false });
+      const scheduleState = activeSchedule === "campaign" ? campaignState : appState;
+      if (!scheduleState[key]) scheduleState[key] = [];
+      scheduleState[key].push({ title, sub, done: false });
       saveState();
       renderProgram();
     }
@@ -541,12 +574,18 @@
         }
 
         const previousState = appState;
+        const previousSchedule = activeSchedule;
         appState = newTasks;
+        activeSchedule = "sheet";
         try {
+          localStorage.setItem("furkan_active_schedule", activeSchedule);
+          updateScheduleControls();
           renderProgram();
           saveState();
         } catch (error) {
           appState = previousState;
+          activeSchedule = previousSchedule;
+          updateScheduleControls();
           renderProgram();
           throw error;
         }
@@ -574,6 +613,7 @@
     }
 
     renderProfile();
+    updateScheduleControls();
     document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
     renderProgram();
     if (appSettings.syncOnLoad) fetchSheetData();
