@@ -620,17 +620,13 @@
       if (!column) return null;
 
       const dayKey = column.dataset.dayKey;
-      const card = hovered.closest("[data-task-index]");
       const cards = Array.from(column.querySelectorAll("[data-task-index]"))
         .filter(taskCard => taskCard !== taskPress?.card);
-      if (!card || card.closest("[data-day-key]") !== column || card === taskPress?.card) {
-        return { dayKey, index: cards.length };
-      }
-
-      const index = cards.indexOf(card);
-      if (index === -1) return { dayKey, index: cards.length };
-      const midpoint = card.getBoundingClientRect().top + card.getBoundingClientRect().height / 2;
-      return { dayKey, index: index + (y > midpoint ? 1 : 0) };
+      const index = cards.findIndex(card => {
+        const rect = card.getBoundingClientRect();
+        return y < rect.top + rect.height / 2;
+      });
+      return { dayKey, index: index === -1 ? cards.length : index };
     }
 
     function moveTaskPlaceholder(press, position) {
