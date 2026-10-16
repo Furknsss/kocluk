@@ -505,7 +505,7 @@
             <div class="text-lg font-bold text-slate-800 my-0.5">${formatScheduleDate(date)}</div>
             <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
               ? `${escapeHtml(scheduleMeta[key].durationLabel || "Toplam süre")}: ${escapeHtml(scheduleMeta[key].duration)}`
-              : "Toplam süre Excel’de belirtilmedi"}</div>
+              : "Süre belirtilmedi"}</div>
           </div>
 
           <!-- + Görev Ekle Butonu -->
@@ -520,7 +520,7 @@
         const tasks = appState[key] || [];
 
         if (tasks.length === 0) {
-          html += `<div class="py-4 text-center text-[11px] text-slate-400">Excel’de bu gün için görev yok</div>`;
+          html += `<div class="py-4 text-center text-[11px] text-slate-400">Görev yok</div>`;
         }
 
         tasks.forEach((t, tIdx) => {
