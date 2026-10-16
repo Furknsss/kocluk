@@ -37,7 +37,7 @@
       -webkit-touch-callout: none;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-    .baykus-card.task-dragging { opacity: 0.45; }
+    .baykus-card.task-dragging { opacity: 1; }
     .task-drag-handle {
       touch-action: none;
       cursor: grab;
@@ -46,17 +46,7 @@
       -webkit-touch-callout: none;
     }
     .task-drag-handle:active { cursor: grabbing; }
-    .task-drag-ghost {
-      position: fixed;
-      left: 0;
-      top: 0;
-      z-index: 1000;
-      pointer-events: none;
-      opacity: 0.96;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.25);
-      transition: none;
-      will-change: transform;
-    }
+    .task-drag-placeholder { visibility: hidden; pointer-events: none; }
     .col-border.day-drop-target { background-color: #eef2ff; }
     .baykus-card:hover {
       background-color: #ffffff;
@@ -679,18 +669,34 @@
     function beginTaskDrag(press) {
       press.dragging = true;
       press.moved = true;
+      const rect = press.card.getBoundingClientRect();
+      press.originalStyle = press.card.getAttribute("style");
+      press.placeholder = press.card.cloneNode(true);
+      press.placeholder.classList.add("task-drag-placeholder");
+      press.placeholder.removeAttribute("onclick");
+      press.placeholder.removeAttribute("data-task-index");
+      press.placeholder.style.width = `${rect.width}px`;
+      press.placeholder.style.height = `${rect.height}px`;
+      press.card.parentNode.insertBefore(press.placeholder, press.card);
       press.card.classList.add("task-dragging");
-      press.ghost = press.card.cloneNode(true);
-      press.ghost.classList.remove("task-dragging");
-      press.ghost.classList.add("task-drag-ghost");
-      press.ghost.removeAttribute("onclick");
-      press.ghost.style.width = `${press.card.getBoundingClientRect().width}px`;
-      document.body.appendChild(press.ghost);
+      Object.assign(press.card.style, {
+        position: "fixed",
+        left: "0",
+        top: "0",
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        margin: "0",
+        zIndex: "1000",
+        pointerEvents: "none",
+        transition: "none",
+        willChange: "transform",
+        boxSizing: "border-box",
+        boxShadow: "0 12px 28px rgba(15, 23, 42, 0.25)",
+      });
     }
 
-    function moveTaskGhost(press) {
-      if (!press.ghost) return;
-      press.ghost.style.transform = `translate3d(${press.x - press.offsetX}px, ${press.y - press.offsetY}px, 0) rotate(2deg) scale(1.03)`;
+    function moveDraggedTaskCard(press) {
+      press.card.style.transform = `translate3d(${press.x - press.offsetX}px, ${press.y - press.offsetY}px, 0)`;
     }
 
     function moveTaskPress(event) {
@@ -704,7 +710,7 @@
       }
 
       event.preventDefault();
-      moveTaskGhost(taskPress);
+      moveDraggedTaskCard(taskPress);
       updateTaskDropTarget(event.clientX, event.clientY);
     }
 
@@ -714,7 +720,9 @@
       const press = taskPress;
       taskPress = null;
       press.card.classList.remove("task-dragging");
-      press.ghost?.remove();
+      if (press.placeholder?.isConnected) press.placeholder.replaceWith(press.card);
+      if (press.originalStyle === null) press.card.removeAttribute("style");
+      else if (press.originalStyle !== undefined) press.card.setAttribute("style", press.originalStyle);
       document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
       if (!press.dragging) return;
 
