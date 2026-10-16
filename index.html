@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arda Abi | YKS Derece Koçluğu Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f9fa; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- Üst Bar -->
+  <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">🦉</div>
+      <div>
+        <h1 class="font-bold text-slate-900 text-base leading-tight">YKS 2026 Derece Karargâhı</h1>
+        <p class="text-xs text-slate-500 font-medium">Hedef: İTÜ Elektrik (İlk 5.000)</p>
+      </div>
+    </div>
+    <button onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition flex items-center gap-1.5">
+      🔄 Canlı Yenile
+    </button>
+  </header>
+
+  <!-- Ana Kanban Alanı -->
+  <main class="p-6">
+    <div id="board" class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 items-start overflow-x-auto">
+      <!-- Gün Sütunları JS ile Doldurulacak -->
+    </div>
+  </main>
+
+  <script>
+    // 1. ADIMDA ALDIĞIN CSV LİNKİNİ AŞAĞIYA YAPIŞTIR:
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
+
+    const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+
+    async function fetchSheetData() {
+      const board = document.getElementById("board");
+      board.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">Veriler Master Panelden Yükleniyor...</div>';
+      
+      try {
+        const response = await fetch(CSV_URL);
+        const text = await response.text();
+        const rows = text.split("\n").map(r => r.split(","));
+        
+        // Tablo başlıkları ve verileri parse et
+        renderKanban(rows);
+      } catch (err) {
+        board.innerHTML = '<div class="col-span-full text-center py-10 text-rose-500 font-medium">CSV bağlantısı okunamadı. Lütfen Web de Yayınla linkini kontrol et.</div>';
+      }
+    }
+
+    function renderKanban(rows) {
+      const board = document.getElementById("board");
+      board.innerHTML = "";
+
+      DAYS.forEach(day => {
+        const dayCol = document.createElement("div");
+        dayCol.className = "bg-slate-100/80 rounded-2xl p-3 border border-slate-200 flex flex-col min-w-[220px]";
+        
+        let headerHtml = `
+          <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
+            <span class="font-bold text-sm text-slate-800">${day}</span>
+            <span class="text-[11px] font-semibold text-indigo-600 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-xs">Etüt</span>
+          </div>
+          <div class="space-y-2.5 flex-1" id="col-${day}">
+        `;
+
+        // İlgili günün görevlerini bul
+        const dayTasks = rows.filter(r => r[1] && r[1].trim().toLowerCase() === day.toLowerCase());
+
+        let tasksHtml = "";
+        dayTasks.forEach(task => {
+          const taskName = task[2] || "Görev";
+          const taskDetail = task[3] || "";
+          const status = task[4] || "Bekliyor";
+          const isDone = status.toLowerCase().includes("tamam") || status.toLowerCase().includes("bitti");
+
+          tasksHtml += `
+            <div class="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs hover:shadow-sm transition">
+              <div class="flex items-start justify-between gap-2">
+                <span class="font-semibold text-xs text-slate-900">${taskName}</span>
+                <input type="checkbox" ${isDone ? "checked" : ""} class="rounded text-indigo-600 focus:ring-0 mt-0.5" />
+              </div>
+              ${taskDetail ? `<p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${taskDetail}</p>` : ""}
+            </div>
+          `;
+        });
+
+        if (dayTasks.length === 0) {
+          tasksHtml = `<div class="text-[11px] text-slate-400 text-center py-4">Serbest Tekrar / Boş</div>`;
+        }
+
+        dayCol.innerHTML = headerHtml + tasksHtml + `</div>`;
+        board.appendChild(dayCol);
+      });
+    }
+
+    if (CSV_URL !== "BURAYA_CSV_LINKINI_YAPISTIR") {
+      fetchSheetData();
+    } else {
+      document.getElementById("board").innerHTML = '<div class="col-span-full text-center py-10 text-amber-600">Lütfen koddaki CSV_URL alanına Web de Yayınla bağlantını yapıştır.</div>';
+    }
+  </script>
+</body>
+</html>
