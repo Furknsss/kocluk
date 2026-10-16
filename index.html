@@ -106,7 +106,7 @@
 
     <div class="flex flex-wrap items-center gap-3">
       <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
-        Excel’deki Güncel Program
+        <span id="current-week-label">Bu haftanın programı</span>
       </div>
       <div class="text-xs text-slate-500">
         Gemini’nin hazırladığı haftalık plan • Excel/Google Sheets’ten canlı yüklenir
@@ -216,7 +216,6 @@
       { name: "Pazar", offset: 6 }
     ];
 
-    const FIRST_PROGRAM_WEEK_MONDAY = new Date(2026, 9, 12);
     let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || {};
     let scheduleMeta = JSON.parse(localStorage.getItem("furkan_schedule_meta") || "{}");
     const DEFAULT_PROFILE = { name: "Furkan", target: "İTÜ Elektrik (İlk 5.000)", photo: "" };
@@ -238,22 +237,23 @@
       })[character]);
     }
 
-    function getScheduleDate(weekNumber, dayOffset) {
-      const date = new Date(FIRST_PROGRAM_WEEK_MONDAY);
-      date.setDate(date.getDate() + (weekNumber - 1) * 7 + dayOffset);
-      return date;
-    }
-
-    function parseSheetDate(value) {
-      const match = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-      if (match) return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
-      const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (isoDate) return new Date(Number(isoDate[1]), Number(isoDate[2]) - 1, Number(isoDate[3]));
-      return null;
+    function getScheduleDate(dayOffset, referenceDate = new Date()) {
+      const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+      const mondayOffset = (today.getDay() + 6) % 7;
+      today.setDate(today.getDate() - mondayOffset + dayOffset);
+      return today;
     }
 
     function formatScheduleDate(date) {
       return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" }).format(date);
+    }
+
+    function updateCurrentWeekLabel(referenceDate = new Date()) {
+      const monday = getScheduleDate(0, referenceDate);
+      const sunday = getScheduleDate(6, referenceDate);
+      const format = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
+      document.getElementById("current-week-label").textContent =
+        `Bu hafta: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
     }
 
     function renderProfile() {
@@ -371,16 +371,20 @@
     function renderProgram() {
       const grid = document.getElementById("kanban-grid");
       grid.innerHTML = "";
+      updateCurrentWeekLabel();
+      const today = new Date();
 
       DAYS_INFO.forEach(d => {
         const key = d.name.toLocaleLowerCase("tr-TR");
+        const date = getScheduleDate(d.offset, today);
+        const isToday = date.toDateString() === today.toDateString();
         const col = document.createElement("div");
         col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
 
         let html = `
           <div class="text-center pb-3 mb-2 border-b border-slate-100">
-            <div class="text-xs text-slate-400 font-medium">${d.name}</div>
-            <div class="text-lg font-bold text-slate-800 my-0.5">${scheduleMeta[key] ? escapeHtml(scheduleMeta[key].date) : "Tarih yükleniyor"}</div>
+            <div class="text-xs ${isToday ? "font-bold text-indigo-600" : "text-slate-400"}">${d.name}${isToday ? " · Bugün" : ""}</div>
+            <div class="text-lg font-bold text-slate-800 my-0.5">${formatScheduleDate(date)}</div>
             <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
               ? `Toplam süre: ${escapeHtml(scheduleMeta[key].duration)}`
               : "Toplam süre Excel’de belirtilmedi"}</div>
@@ -504,7 +508,6 @@
         ) {
           throw new Error("Google Sheets CSV başlıkları beklenen biçimde değil.");
         }
-        const dateColumnIndex = normalizedHeader.indexOf("tarih");
         const durationColumnIndex = normalizedHeader.findIndex(value =>
           value === "toplam süre" || value === "günlük toplam süre"
         );
@@ -515,27 +518,18 @@
         const weeklyRows = rows.filter(row =>
           (row[0] || "").trim().toLocaleLowerCase("tr-TR").includes("haftalık program")
         );
-        const weekMatch = (weeklyRows[0]?.[0] || "")
-          .trim()
-          .toLocaleLowerCase("tr-TR")
-          .match(/(\d+)\s*\.\s*haftalık program/);
-        if (!weekMatch) throw new Error("Excel haftalık program başlığında hafta numarası bulunamadı.");
-        const weekNumber = Number(weekMatch[1]);
+        if (weeklyRows.length === 0) throw new Error("Excel’de haftalık program satırları bulunamadı.");
 
         weeklyRows.forEach(row => {
           const dayKey = dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"));
           if (!dayKey) return;
-          const dayInfo = DAYS_INFO.find(day => day.name.toLocaleLowerCase("tr-TR") === dayKey);
 
           const title = (row[2] || "").trim();
           const sub = (row[3] || "").trim();
           if (!title && !sub) return;
 
-          const sheetDate = dateColumnIndex === -1 ? null : parseSheetDate((row[dateColumnIndex] || "").trim());
-          const taskDate = sheetDate || getScheduleDate(weekNumber, dayInfo.offset);
           const duration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
           newScheduleMeta[dayKey] = {
-            date: formatScheduleDate(taskDate),
             duration
           };
 
@@ -595,6 +589,7 @@
 
     renderProfile();
     document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
+    updateCurrentWeekLabel();
     renderProgram();
     if (appSettings.syncOnLoad) fetchSheetData();
   </script>
