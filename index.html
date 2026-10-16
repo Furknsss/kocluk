@@ -312,6 +312,7 @@
   <script>
     // CSV URL BAĞLANTIN (Canlı Senkron İçin)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcpEJG4aP_e7HE6Xi4MeLi2JnGkfLkOR-Dqo9pL7ea7ptJr5IN_MqdnZ-kDeeIWNdwVA/exec";
 
     const DAYS_INFO = [
       { name: "Pazartesi", offset: 0 },
@@ -979,7 +980,7 @@
       if (event.target.closest("[data-task-index]")) event.preventDefault();
     });
 
-    function toggleTask(dayKey, tIdx) {
+    async function toggleTask(dayKey, tIdx) {
       if (ignoreNextTaskClick) {
         ignoreNextTaskClick = false;
         return;
@@ -987,6 +988,33 @@
       appState[dayKey][tIdx].done = !appState[dayKey][tIdx].done;
       saveState();
       renderProgram();
+      await syncTaskStatusToSheet(dayKey, appState[dayKey][tIdx]);
+    }
+
+    async function syncTaskStatusToSheet(dayKey, task) {
+      const status = document.getElementById("sync-status");
+      status.textContent = "Görev kaydedildi; Excel'e durum gönderiliyor...";
+      status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify({
+            action: "updateStatus",
+            day: dayKey,
+            task: task.title,
+            status: task.done ? "Tamamlandı" : "Bekliyor"
+          })
+        });
+        status.textContent = "Durum gönderme isteği iletildi; Apps Script yanıtı doğrulanamıyor.";
+        status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+      } catch (error) {
+        console.error("Görev durumu Apps Script'e gönderilemedi:", error);
+        status.textContent = "Görev bu cihazda kaydedildi ancak Excel'e gönderilemedi.";
+        status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
+      }
     }
 
     function addTask(dayName) {
