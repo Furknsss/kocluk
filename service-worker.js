@@ -1,5 +1,13 @@
 const CACHE_NAME = "kocluk-pwa-v1";
-const APP_SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icon.svg",
+  "./icon-180.png",
+  "./icon-192.png",
+  "./icon-512.png"
+];
 
 self.addEventListener("install", event => {
   event.waitUntil(
@@ -31,9 +39,12 @@ self.addEventListener("fetch", event => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+        .then(async response => {
+          if (response.ok) {
+            await caches.open(CACHE_NAME)
+              .then(cache => cache.put("./index.html", response.clone()))
+              .catch(error => console.error("Sayfa önbelleğe alınamadı:", error));
+          }
           return response;
         })
         .catch(async () => {
@@ -47,17 +58,18 @@ self.addEventListener("fetch", event => {
   if (requestUrl.origin !== self.location.origin && !isAppAsset) return;
 
   event.respondWith(
-    caches.match(request).then(cachedResponse => {
+    caches.open(CACHE_NAME).then(cache => cache.match(request)).then(cachedResponse => {
       if (cachedResponse) return cachedResponse;
 
       return fetch(request).then(response => {
         if (response.ok || response.type === "opaque") {
-          const copy = response.clone();
-          event.waitUntil(
-            caches.open(CACHE_NAME)
-              .then(cache => cache.put(request, copy))
-              .catch(error => console.error("Önbellek güncellenemedi:", error))
-          );
+          return caches.open(CACHE_NAME)
+            .then(cache => cache.put(request, response.clone()))
+            .then(() => response)
+            .catch(error => {
+              console.error("Önbellek güncellenemedi:", error);
+              return response;
+            });
         }
         return response;
       });

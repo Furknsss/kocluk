@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="description" content="Haftalık çalışma programını takip et, görevlerini tamamla ve ilerlemeni gör." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Koçluk" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon-180.png" />
   <title>Furkan | Program</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -55,12 +56,19 @@
     ::-webkit-scrollbar { height: 6px; width: 6px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     @media (max-width: 639px) {
-      #app-header { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
-      #app-header > div:first-child { flex: 1 1 100%; gap: 16px; }
-      #app-nav { flex: 1; min-width: 0; gap: 18px; overflow-x: auto; scrollbar-width: none; }
+      #app-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "brand profile" "nav nav";
+        gap: 8px 16px;
+        padding: 10px 16px;
+      }
+      #app-header > div:first-child { display: contents; }
+      #app-header > div:first-child > div:first-child { grid-area: brand; }
+      #app-nav { grid-area: nav; min-width: 0; gap: 18px; overflow-x: auto; scrollbar-width: none; }
       #app-nav::-webkit-scrollbar { display: none; }
       #app-nav button { flex: 0 0 auto; white-space: nowrap; }
-      #profile-menu-wrap { margin-left: auto; margin-top: -42px; }
+      #profile-menu-wrap { grid-area: profile; }
       #student-week-bar { padding-left: 16px; padding-right: 16px; }
       #student-week-row { align-items: flex-start; gap: 12px; flex-direction: column; }
       #sync-controls { width: 100%; flex-wrap: wrap; }
@@ -96,9 +104,13 @@
           <span id="header-profile-initial">F</span>
         </span>
       </button>
-      <div id="profile-menu" class="hidden absolute right-0 mt-2 w-44 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-[60]" role="menu">
+      <div id="profile-menu" class="hidden absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-[60]" role="menu">
         <button type="button" onclick="openProfileModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">Profil</button>
         <button type="button" onclick="openSettingsModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">Ayarlar</button>
+        <button id="sync-button" type="button" onclick="fetchSheetData()" class="w-full px-4 py-2.5 text-left text-sm text-indigo-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" role="menuitem">
+          🔄 Senkronize Et
+        </button>
+        <span id="sync-status" class="block px-4 pb-2 text-xs font-semibold" role="status" aria-live="polite"></span>
       </div>
     </div>
   </header>
@@ -119,10 +131,6 @@
         <button id="install-button" type="button" onclick="installApp()" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100">
           📲 Uygulamayı yükle
         </button>
-        <button id="sync-button" type="button" onclick="fetchSheetData()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-indigo-600 hover:bg-slate-50 flex items-center gap-1.5">
-          🔄 Canlı Senkronize Et
-        </button>
-        <span id="sync-status" class="text-xs font-semibold" role="status" aria-live="polite"></span>
       </div>
     </div>
 
