@@ -207,16 +207,18 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
 
     const DAYS_INFO = [
-      { name: "Pazartesi" },
-      { name: "Salı" },
-      { name: "Çarşamba" },
-      { name: "Perşembe" },
-      { name: "Cuma" },
-      { name: "Cumartesi" },
-      { name: "Pazar" }
+      { name: "Pazartesi", offset: 0 },
+      { name: "Salı", offset: 1 },
+      { name: "Çarşamba", offset: 2 },
+      { name: "Perşembe", offset: 3 },
+      { name: "Cuma", offset: 4 },
+      { name: "Cumartesi", offset: 5 },
+      { name: "Pazar", offset: 6 }
     ];
 
+    const FIRST_PROGRAM_WEEK_MONDAY = new Date(2026, 9, 12);
     let appState = JSON.parse(localStorage.getItem("furkan_program_state")) || {};
+    let scheduleMeta = JSON.parse(localStorage.getItem("furkan_schedule_meta") || "{}");
     const DEFAULT_PROFILE = { name: "Furkan", target: "İTÜ Elektrik (İlk 5.000)", photo: "" };
     let profile = { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
@@ -234,6 +236,24 @@
         "\"": "&quot;",
         "'": "&#39;"
       })[character]);
+    }
+
+    function getScheduleDate(weekNumber, dayOffset) {
+      const date = new Date(FIRST_PROGRAM_WEEK_MONDAY);
+      date.setDate(date.getDate() + (weekNumber - 1) * 7 + dayOffset);
+      return date;
+    }
+
+    function parseSheetDate(value) {
+      const match = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+      if (match) return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+      const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoDate) return new Date(Number(isoDate[1]), Number(isoDate[2]) - 1, Number(isoDate[3]));
+      return null;
+    }
+
+    function formatScheduleDate(date) {
+      return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" }).format(date);
     }
 
     function renderProfile() {
@@ -353,15 +373,17 @@
       grid.innerHTML = "";
 
       DAYS_INFO.forEach(d => {
+        const key = d.name.toLocaleLowerCase("tr-TR");
         const col = document.createElement("div");
         col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
 
         let html = `
-          <!-- Haftalık plan gün başlığı -->
           <div class="text-center pb-3 mb-2 border-b border-slate-100">
             <div class="text-xs text-slate-400 font-medium">${d.name}</div>
-            <div class="text-lg font-bold text-slate-800 my-0.5">Haftalık Plan</div>
-            <div class="text-[10px] text-slate-400 font-medium">Excel’den yüklenen görevler</div>
+            <div class="text-lg font-bold text-slate-800 my-0.5">${scheduleMeta[key] ? escapeHtml(scheduleMeta[key].date) : "Tarih yükleniyor"}</div>
+            <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
+              ? `Toplam süre: ${escapeHtml(scheduleMeta[key].duration)}`
+              : "Toplam süre Excel’de belirtilmedi"}</div>
           </div>
 
           <!-- + Görev Ekle Butonu -->
@@ -373,7 +395,6 @@
           <div class="space-y-2.5 flex-1">
         `;
 
-        const key = d.name.toLocaleLowerCase("tr-TR");
         const tasks = appState[key] || [];
 
         tasks.forEach((t, tIdx) => {
@@ -483,20 +504,40 @@
         ) {
           throw new Error("Google Sheets CSV başlıkları beklenen biçimde değil.");
         }
+        const dateColumnIndex = normalizedHeader.indexOf("tarih");
+        const durationColumnIndex = normalizedHeader.findIndex(value =>
+          value === "toplam süre" || value === "günlük toplam süre"
+        );
 
         const dayKeys = new Map(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), day.name.toLocaleLowerCase("tr-TR")]));
         const newTasks = Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]));
+        const newScheduleMeta = {};
         const weeklyRows = rows.filter(row =>
           (row[0] || "").trim().toLocaleLowerCase("tr-TR").includes("haftalık program")
         );
+        const weekMatch = (weeklyRows[0]?.[0] || "")
+          .trim()
+          .toLocaleLowerCase("tr-TR")
+          .match(/(\d+)\s*\.\s*haftalık program/);
+        if (!weekMatch) throw new Error("Excel haftalık program başlığında hafta numarası bulunamadı.");
+        const weekNumber = Number(weekMatch[1]);
 
         weeklyRows.forEach(row => {
           const dayKey = dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"));
           if (!dayKey) return;
+          const dayInfo = DAYS_INFO.find(day => day.name.toLocaleLowerCase("tr-TR") === dayKey);
 
           const title = (row[2] || "").trim();
           const sub = (row[3] || "").trim();
           if (!title && !sub) return;
+
+          const sheetDate = dateColumnIndex === -1 ? null : parseSheetDate((row[dateColumnIndex] || "").trim());
+          const taskDate = sheetDate || getScheduleDate(weekNumber, dayInfo.offset);
+          const duration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
+          newScheduleMeta[dayKey] = {
+            date: formatScheduleDate(taskDate),
+            duration
+          };
 
           newTasks[dayKey].push({
             title: title || sub,
@@ -516,12 +557,16 @@
         }
 
         const previousState = appState;
+        const previousScheduleMeta = scheduleMeta;
         appState = newTasks;
+        scheduleMeta = newScheduleMeta;
         try {
           renderProgram();
           saveState();
+          localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
         } catch (error) {
           appState = previousState;
+          scheduleMeta = previousScheduleMeta;
           renderProgram();
           throw error;
         }
