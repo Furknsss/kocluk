@@ -428,6 +428,10 @@
       return note.slice(0, markerIndex).replace(/\n?İlerleme: [^\n]*\n?$/, "").trim();
     }
 
+    function serializeTaskNote(task) {
+      return String(task.note || "").replace(/\n?\[KOCLUK_PROGRESS\].*$/s, "").trim();
+    }
+
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, character => ({
         "&": "&amp;",
