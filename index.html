@@ -12,8 +12,11 @@
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon-180.png" />
   <title>Furkan | Program</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <script src="https://cdn.tailwindcss.com" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -107,6 +110,7 @@
         <button onclick="switchTab('program')" id="nav-program" class="text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1">Program</button>
         <button onclick="switchTab('analiz')" id="nav-analiz" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Kaynak &amp; İlerleme</button>
         <button onclick="switchTab('deneme')" id="nav-deneme" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Deneme Röntgeni</button>
+        <button onclick="switchTab('soru-kumbaram')" id="nav-soru-kumbaram" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Soru Kumbaram</button>
       </nav>
     </div>
 
@@ -137,6 +141,13 @@
     </div>
   </header>
 
+  <nav id="question-bank-nav" class="hidden border-b border-slate-100 bg-white px-8 py-2.5" aria-label="Soru Kumbaram">
+    <div class="flex items-center gap-5 text-xs font-bold">
+      <button type="button" onclick="switchQuestionBankTab('deneme-sorulari')" id="nav-deneme-sorulari" class="border-b-2 border-indigo-600 pb-2 pt-1 text-indigo-600">Deneme Soruları</button>
+      <button type="button" onclick="switchQuestionBankTab('soru-bankasi')" id="nav-soru-bankasi" class="border-b-2 border-transparent pb-2 pt-1 text-slate-500 transition hover:text-slate-900">Soru Bankası</button>
+    </div>
+  </nav>
+
   <!-- ÖĞRENCİ & HAFTA SEÇİM BARI -->
   <section id="student-week-bar" class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
     <div id="student-week-row" class="flex items-center justify-between mb-3">
@@ -154,6 +165,20 @@
     <div class="flex flex-wrap items-center gap-3">
       <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
         <span id="current-week-label">Bu haftanın programı</span>
+      </div>
+      <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+        <span id="weekly-progress-label">Haftalık ilerleme: hesaplanıyor</span>
+        <div
+          id="weekly-progress"
+          class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100"
+          role="progressbar"
+          aria-label="Haftalık görev tamamlama oranı"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div id="weekly-progress-bar" class="h-full rounded-full bg-emerald-500 transition-[width] duration-300"></div>
+        </div>
       </div>
       <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
         ✓ 16–18 Ekim Kampı Aktif
@@ -208,6 +233,9 @@
       Henüz deneme girilmedi. Çözülen denemeler buraya işlenecek.
     </div>
   </main>
+
+  <main id="view-deneme-sorulari" class="hidden flex-1"></main>
+  <main id="view-soru-bankasi" class="hidden flex-1"></main>
 
   <div id="ios-install-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="ios-install-title" onclick="if (event.target === this) closeModal('ios-install-modal')">
     <section class="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
@@ -312,73 +340,6 @@
     </section>
   </div>
 
-  <div id="task-progress-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="task-progress-title" onclick="if (event.target === this) closeModal('task-progress-modal')">
-    <section class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl sm:p-6">
-      <div class="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 id="task-progress-title" class="text-lg font-bold text-slate-900">Görev ilerlemesi</h2>
-          <p id="task-progress-subtitle" class="mt-1 text-xs leading-relaxed text-slate-500"></p>
-        </div>
-        <button type="button" onclick="closeModal('task-progress-modal')" aria-label="İlerleme penceresini kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
-      </div>
-      <form onsubmit="saveTaskProgress(event)">
-        <label class="mb-3 block text-sm font-semibold text-slate-700" for="progress-video-status">
-          Video durumu
-          <select id="progress-video-status" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal">
-            <option value="not-set">Takip edilmiyor</option>
-            <option value="not-started">İzlenmedi</option>
-            <option value="in-progress">İzleniyor</option>
-            <option value="completed">Tamamlandı</option>
-            <option value="not-applicable">Bu görevde video yok</option>
-          </select>
-        </label>
-        <div class="mb-3 grid gap-3 sm:grid-cols-2">
-          <label class="block text-sm font-semibold text-slate-700" for="progress-solved-tests">
-            Çözülen testler
-            <textarea id="progress-solved-tests" rows="3" maxlength="1000" placeholder="Örn. Test 1, Test 2 / 3. test ilk 8 soru" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"></textarea>
-          </label>
-          <label class="block text-sm font-semibold text-slate-700" for="progress-remaining-tests">
-            Kalan testler
-            <textarea id="progress-remaining-tests" rows="3" maxlength="1000" placeholder="Örn. Test 3 ve Test 4" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"></textarea>
-          </label>
-        </div>
-        <fieldset class="mb-3 rounded-lg border border-slate-200 p-3">
-          <legend class="px-1 text-sm font-semibold text-slate-700">Soru performansı</legend>
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <label class="text-xs font-semibold text-slate-600" for="progress-questions-solved">
-              Çözülen
-              <input id="progress-questions-solved" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
-            </label>
-            <label class="text-xs font-semibold text-slate-600" for="progress-questions-total">
-              Toplam hedef
-              <input id="progress-questions-total" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
-            </label>
-            <label class="text-xs font-semibold text-slate-600" for="progress-correct">
-              Doğru
-              <input id="progress-correct" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
-            </label>
-            <label class="text-xs font-semibold text-slate-600" for="progress-incorrect">
-              Yanlış
-              <input id="progress-incorrect" type="number" min="0" max="100000" inputmode="numeric" class="mt-1 w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-normal">
-            </label>
-          </div>
-          <p class="mt-2 text-[11px] text-slate-400">Doğru/yanlış toplamı çözülen soru sayısını aşamaz.</p>
-        </fieldset>
-        <label class="mb-4 block text-sm font-semibold text-slate-700" for="progress-coaching-note">
-          Koçluk notu / takıldığın yer
-          <textarea id="progress-coaching-note" rows="2" maxlength="1000" placeholder="Örn. Açıortay sorularında benzerlik bağıntılarını tekrar et" class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal"></textarea>
-        </label>
-        <div class="flex items-center justify-between gap-3">
-          <button type="button" onclick="clearTaskProgress()" class="rounded-md px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">İlerlemeyi temizle</button>
-          <div class="flex gap-2">
-            <button type="button" onclick="closeModal('task-progress-modal')" class="rounded-md px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Vazgeç</button>
-            <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Kaydet ve eşitle</button>
-          </div>
-        </div>
-      </form>
-    </section>
-  </div>
-
   <script>
     // CSV URL BAĞLANTIN (Canlı Senkron İçin)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
@@ -437,6 +398,11 @@
     let scheduleMeta = storedScheduleMeta === null && storedProgramState === null && isInitialCampWeek
       ? JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
       : JSON.parse(storedScheduleMeta || "{}");
+    const TASK_SYNC_QUEUE_KEY = "furkan_task_sync_queue";
+    let taskSyncQueue = JSON.parse(localStorage.getItem(TASK_SYNC_QUEUE_KEY) || "[]");
+    let taskSyncRevision = 0;
+    let isFlushingTaskSyncQueue = false;
+    let taskSyncRetryTimer = null;
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
@@ -449,120 +415,17 @@
     let deferredInstallPrompt = null;
     let taskPress = null;
     let ignoreNextTaskClick = false;
-    let activeProgressTask = null;
     const shownReminderNotifications = new Set();
 
     function saveState() {
       localStorage.setItem("furkan_program_state", JSON.stringify(appState));
     }
 
-    function emptyTaskProgress() {
-      return {
-        videoStatus: "not-set",
-        solvedTests: "",
-        remainingTests: "",
-        questionsSolved: null,
-        questionsTotal: null,
-        correctAnswers: null,
-        incorrectAnswers: null,
-        coachingNote: ""
-      };
-    }
-
-    function normalizeTaskProgress(progress = {}) {
-      const allowedVideoStatuses = ["not-set", "not-started", "in-progress", "completed", "not-applicable"];
-      const toCount = value => {
-        if (value === "" || value === null || value === undefined) return null;
-        const count = Number(value);
-        return Number.isInteger(count) && count >= 0 ? count : null;
-      };
-      return {
-        videoStatus: allowedVideoStatuses.includes(progress.videoStatus) ? progress.videoStatus : "not-set",
-        solvedTests: String(progress.solvedTests || ""),
-        remainingTests: String(progress.remainingTests || ""),
-        questionsSolved: toCount(progress.questionsSolved),
-        questionsTotal: toCount(progress.questionsTotal),
-        correctAnswers: toCount(progress.correctAnswers),
-        incorrectAnswers: toCount(progress.incorrectAnswers),
-        coachingNote: String(progress.coachingNote || "")
-      };
-    }
-
-    function hasTaskProgress(progress) {
-      return progress.videoStatus !== "not-set" ||
-        progress.solvedTests.trim() ||
-        progress.remainingTests.trim() ||
-        progress.questionsSolved !== null ||
-        progress.questionsTotal !== null ||
-        progress.correctAnswers !== null ||
-        progress.incorrectAnswers !== null ||
-        progress.coachingNote.trim();
-    }
-
-    function serializeTaskNote(task) {
-      const baseNote = String(task.note || "").replace(/\n?\[KOCLUK_PROGRESS\].*$/s, "").trim();
-      const progress = normalizeTaskProgress(task.progress);
-      if (!hasTaskProgress(progress)) return baseNote;
-
-      const videoLabels = {
-        "not-set": "Takip edilmiyor",
-        "not-started": "İzlenmedi",
-        "in-progress": "İzleniyor",
-        completed: "Tamamlandı",
-        "not-applicable": "Video yok"
-      };
-      const questions = progress.questionsSolved === null && progress.questionsTotal === null
-        ? ""
-        : `${progress.questionsSolved ?? 0}/${progress.questionsTotal ?? "?"}`;
-      const answers = progress.correctAnswers === null && progress.incorrectAnswers === null
-        ? ""
-        : `${progress.correctAnswers ?? 0} doğru, ${progress.incorrectAnswers ?? 0} yanlış`;
-      const readable = [
-        `Video: ${videoLabels[progress.videoStatus]}`,
-        progress.solvedTests && `Çözülen testler: ${progress.solvedTests}`,
-        progress.remainingTests && `Kalan testler: ${progress.remainingTests}`,
-        questions && `Sorular: ${questions}`,
-        answers && `Performans: ${answers}`,
-        progress.coachingNote && `Koçluk notu: ${progress.coachingNote}`
-      ].filter(Boolean).join(" | ");
-      const lines = [baseNote, `İlerleme: ${readable}`, `[KOCLUK_PROGRESS]${JSON.stringify(progress)}`].filter(Boolean);
-      return lines.join("\n");
-    }
-
     function parseTaskNote(rawNote) {
       const note = String(rawNote || "");
       const markerIndex = note.lastIndexOf("[KOCLUK_PROGRESS]");
-      if (markerIndex === -1) return { note, progress: emptyTaskProgress() };
-
-      const baseNote = note.slice(0, markerIndex).replace(/\n?İlerleme: [^\n]*\n?$/, "").trim();
-      try {
-        return {
-          note: baseNote,
-          progress: normalizeTaskProgress(JSON.parse(note.slice(markerIndex + "[KOCLUK_PROGRESS]".length).trim()))
-        };
-      } catch (error) {
-        console.error("Excel'deki görev ilerlemesi okunamadı:", error);
-        return { note, progress: emptyTaskProgress() };
-      }
-    }
-
-    function getTaskProgressSummary(progress) {
-      const value = normalizeTaskProgress(progress);
-      const parts = [];
-      if (value.videoStatus === "completed") parts.push("Video tamamlandı");
-      else if (value.videoStatus === "in-progress") parts.push("Video izleniyor");
-      else if (value.videoStatus === "not-started") parts.push("Video bekliyor");
-      else if (value.videoStatus === "not-applicable") parts.push("Video yok");
-      if (value.solvedTests.trim()) parts.push(`Çözülen: ${value.solvedTests}`);
-      if (value.remainingTests.trim()) parts.push(`Kalan: ${value.remainingTests}`);
-      if (value.questionsSolved !== null || value.questionsTotal !== null) {
-        parts.push(`Soru: ${value.questionsSolved ?? 0}/${value.questionsTotal ?? "?"}`);
-      }
-      if (value.correctAnswers !== null || value.incorrectAnswers !== null) {
-        parts.push(`${value.correctAnswers ?? 0}D / ${value.incorrectAnswers ?? 0}Y`);
-      }
-      if (value.coachingNote.trim()) parts.push(`Not: ${value.coachingNote}`);
-      return parts.join(" · ");
+      if (markerIndex === -1) return note;
+      return note.slice(0, markerIndex).replace(/\n?İlerleme: [^\n]*\n?$/, "").trim();
     }
 
     function escapeHtml(value) {
@@ -678,88 +541,6 @@
 
     function closeModal(modalId) {
       document.getElementById(modalId).classList.add("hidden");
-    }
-
-    function openTaskProgress(dayKey, taskIndex) {
-      const task = appState[dayKey]?.[taskIndex];
-      if (!task) return;
-      activeProgressTask = { dayKey, taskIndex };
-      const progress = normalizeTaskProgress(task.progress);
-      document.getElementById("task-progress-title").textContent = "Görev ilerlemesi";
-      document.getElementById("task-progress-subtitle").textContent = [task.title, task.sub].filter(Boolean).join(" · ");
-      document.getElementById("progress-video-status").value = progress.videoStatus;
-      document.getElementById("progress-solved-tests").value = progress.solvedTests;
-      document.getElementById("progress-remaining-tests").value = progress.remainingTests;
-      document.getElementById("progress-questions-solved").value = progress.questionsSolved ?? "";
-      document.getElementById("progress-questions-total").value = progress.questionsTotal ?? "";
-      document.getElementById("progress-correct").value = progress.correctAnswers ?? "";
-      document.getElementById("progress-incorrect").value = progress.incorrectAnswers ?? "";
-      document.getElementById("progress-coaching-note").value = progress.coachingNote;
-      closeProfileMenu();
-      document.getElementById("task-progress-modal").classList.remove("hidden");
-    }
-
-    function readProgressCount(inputId) {
-      const value = document.getElementById(inputId).value;
-      return value === "" ? null : Number(value);
-    }
-
-    function saveTaskProgress(event) {
-      event.preventDefault();
-      if (!activeProgressTask) return;
-
-      const progress = normalizeTaskProgress({
-        videoStatus: document.getElementById("progress-video-status").value,
-        solvedTests: document.getElementById("progress-solved-tests").value.trim(),
-        remainingTests: document.getElementById("progress-remaining-tests").value.trim(),
-        questionsSolved: readProgressCount("progress-questions-solved"),
-        questionsTotal: readProgressCount("progress-questions-total"),
-        correctAnswers: readProgressCount("progress-correct"),
-        incorrectAnswers: readProgressCount("progress-incorrect"),
-        coachingNote: document.getElementById("progress-coaching-note").value.trim()
-      });
-      if (progress.questionsSolved === null &&
-          (progress.correctAnswers !== null || progress.incorrectAnswers !== null)) {
-        progress.questionsSolved = (progress.correctAnswers || 0) + (progress.incorrectAnswers || 0);
-      }
-
-      const attemptedAnswers = (progress.correctAnswers || 0) + (progress.incorrectAnswers || 0);
-      if (progress.questionsSolved !== null && attemptedAnswers > progress.questionsSolved) {
-        alert("Doğru ve yanlış toplamı çözülen soru sayısından fazla olamaz.");
-        return;
-      }
-      if (progress.questionsSolved !== null && progress.questionsTotal !== null &&
-          progress.questionsSolved > progress.questionsTotal) {
-        alert("Çözülen soru sayısı toplam hedeften fazla olamaz.");
-        return;
-      }
-
-      const { dayKey, taskIndex } = activeProgressTask;
-      const task = appState[dayKey]?.[taskIndex];
-      if (!task) {
-        closeModal("task-progress-modal");
-        activeProgressTask = null;
-        return;
-      }
-      task.progress = progress;
-      saveState();
-      renderProgram();
-      closeModal("task-progress-modal");
-      activeProgressTask = null;
-      syncTaskProgressToSheet(dayKey, task);
-    }
-
-    function clearTaskProgress() {
-      if (!activeProgressTask) return;
-      const { dayKey, taskIndex } = activeProgressTask;
-      const task = appState[dayKey]?.[taskIndex];
-      if (!task || !window.confirm("Bu görevin video ve soru ilerlemesi temizlensin mi?")) return;
-      task.progress = emptyTaskProgress();
-      saveState();
-      renderProgram();
-      closeModal("task-progress-modal");
-      activeProgressTask = null;
-      syncTaskProgressToSheet(dayKey, task);
     }
 
     function applyAttachedCampPlan() {
@@ -1036,14 +817,25 @@
         closeModal("profile-modal");
         closeModal("settings-modal");
         closeModal("reminder-modal");
-        closeModal("task-progress-modal");
       }
     });
+
+    function updateWeeklyProgress() {
+      const tasks = DAYS_INFO.flatMap(day => appState[day.name.toLocaleLowerCase("tr-TR")] || []);
+      const completedCount = tasks.filter(task => task.done).length;
+      const percent = tasks.length ? Math.round(completedCount / tasks.length * 100) : 0;
+      document.getElementById("weekly-progress-label").textContent = tasks.length
+        ? `Haftalık ilerleme: ${completedCount}/${tasks.length} görev (%${percent})`
+        : "Haftalık ilerleme: görev yok";
+      document.getElementById("weekly-progress-bar").style.width = `${percent}%`;
+      document.getElementById("weekly-progress").setAttribute("aria-valuenow", String(percent));
+    }
 
     function renderProgram() {
       const grid = document.getElementById("kanban-grid");
       grid.innerHTML = "";
       updateCurrentWeekLabel();
+      updateWeeklyProgress();
       const today = new Date();
 
       DAYS_INFO.forEach(d => {
@@ -1080,7 +872,6 @@
 
         tasks.forEach((t, tIdx) => {
           const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
-          const progressSummary = getTaskProgressSummary(t.progress);
           html += `
             <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup sürükle">
               <div class="flex items-start justify-between">
@@ -1092,10 +883,6 @@
               ${t.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(t.goal)}</div>` : ""}
               ${t.note ? `<div class="text-[10px] text-slate-500 mt-1">${escapeHtml(t.note)}</div>` : ""}
               <div class="text-[10px] text-slate-400 mt-1">Durum: ${escapeHtml(status)}</div>
-              ${progressSummary ? `<div class="mt-1.5 rounded-md bg-indigo-50 px-2 py-1 text-[10px] font-medium leading-relaxed text-indigo-700">${escapeHtml(progressSummary)}</div>` : ""}
-              <button type="button" onclick="event.stopPropagation(); openTaskProgress('${key}', ${tIdx})" class="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:border-indigo-200 hover:text-indigo-700" aria-label="Görev ilerlemesini kaydet">
-                ${progressSummary ? "İlerlemeyi düzenle" : "📈 İlerleme gir"}
-              </button>
             </div>
           `;
         });
@@ -1279,70 +1066,109 @@
       if (event.target.closest("[data-task-index]")) event.preventDefault();
     });
 
-    async function toggleTask(dayKey, tIdx) {
+    function toggleTask(dayKey, tIdx) {
       if (ignoreNextTaskClick) {
         ignoreNextTaskClick = false;
         return;
       }
-      appState[dayKey][tIdx].done = !appState[dayKey][tIdx].done;
+      const task = appState[dayKey][tIdx];
+      task.done = !task.done;
+      task.status = task.done ? "Tamamlandı" : "Bekliyor";
       saveState();
       renderProgram();
-      await syncTaskStatusToSheet(dayKey, appState[dayKey][tIdx]);
+      syncTaskStatusToSheet(dayKey, task);
     }
 
-    async function syncTaskStatusToSheet(dayKey, task) {
+    function getTaskSyncId(dayKey, task) {
+      return JSON.stringify([dayKey, task.title, task.sub || ""]);
+    }
+
+    function setTaskSyncStatus(message, colorClass) {
       const status = document.getElementById("sync-status");
-      status.textContent = "Görev kaydedildi; Excel'e durum gönderiliyor...";
-      status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+      status.textContent = message;
+      status.className = `block px-4 pb-2 text-xs font-semibold ${colorClass}`;
+    }
+
+    function syncTaskStatusToSheet(dayKey, task) {
+      const update = {
+        id: getTaskSyncId(dayKey, task),
+        day: dayKey,
+        task: task.title,
+        sub: task.sub || "",
+        status: task.done ? "Tamamlandı" : "Bekliyor",
+        updatedAt: Date.now(),
+        revision: ++taskSyncRevision
+      };
+      const existingIndex = taskSyncQueue.findIndex(item => item.id === update.id);
+      if (existingIndex === -1) taskSyncQueue.push(update);
+      else taskSyncQueue[existingIndex] = update;
 
       try {
-        await fetch(APPS_SCRIPT_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body: JSON.stringify({
-            action: "updateStatus",
-            day: dayKey,
-            task: task.title,
-            sub: task.sub || "",
-            status: task.done ? "Tamamlandı" : "Bekliyor"
-          })
-        });
-        status.textContent = "Durum gönderme isteği iletildi; Apps Script yanıtı doğrulanamıyor.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+        localStorage.setItem(TASK_SYNC_QUEUE_KEY, JSON.stringify(taskSyncQueue));
+      } catch (error) {
+        console.error("Görev eşitleme kuyruğu kaydedilemedi:", error);
+        setTaskSyncStatus("Görev cihazda güncellendi ancak eşitleme kuyruğa alınamadı.", "text-rose-600");
+        return;
+      }
+
+      setTaskSyncStatus(
+        navigator.onLine
+          ? "Görev güncellendi; Excel'e arka planda gönderiliyor."
+          : "Çevrimdışı; görev bağlantı gelince eşitlenecek.",
+        "text-amber-600"
+      );
+      flushTaskSyncQueue();
+    }
+
+    async function flushTaskSyncQueue() {
+      if (isFlushingTaskSyncQueue || !navigator.onLine || taskSyncQueue.length === 0) return;
+      isFlushingTaskSyncQueue = true;
+
+      try {
+        while (taskSyncQueue.length > 0) {
+          const update = taskSyncQueue[0];
+          await fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=UTF-8" },
+            body: JSON.stringify({
+              action: "updateStatus",
+              day: update.day,
+              task: update.task,
+              sub: update.sub,
+              status: update.status
+            })
+          });
+
+          const currentIndex = taskSyncQueue.findIndex(item => item.id === update.id);
+          if (
+            currentIndex !== -1 &&
+            taskSyncQueue[currentIndex].updatedAt === update.updatedAt &&
+            taskSyncQueue[currentIndex].revision === update.revision
+          ) {
+            taskSyncQueue.splice(currentIndex, 1);
+            localStorage.setItem(TASK_SYNC_QUEUE_KEY, JSON.stringify(taskSyncQueue));
+          }
+        }
+        setTaskSyncStatus("Senkronizasyon isteği gönderildi.", "text-emerald-600");
       } catch (error) {
         console.error("Görev durumu Apps Script'e gönderilemedi:", error);
-        status.textContent = "Görev bu cihazda kaydedildi ancak Excel'e gönderilemedi.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
+        setTaskSyncStatus("Bağlantı bekleniyor; görev eşitlemesi sıraya alındı.", "text-amber-600");
+        if (taskSyncRetryTimer === null) {
+          taskSyncRetryTimer = window.setTimeout(() => {
+            taskSyncRetryTimer = null;
+            flushTaskSyncQueue();
+          }, 30000);
+        }
+      } finally {
+        isFlushingTaskSyncQueue = false;
       }
     }
 
-    async function syncTaskProgressToSheet(dayKey, task) {
-      const status = document.getElementById("sync-status");
-      status.textContent = "İlerleme kaydedildi; Excel'e gönderiliyor...";
-      status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
-
-      try {
-        await fetch(APPS_SCRIPT_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body: JSON.stringify({
-            action: "updateProgress",
-            day: dayKey,
-            task: task.title,
-            sub: task.sub || "",
-            note: serializeTaskNote(task)
-          })
-        });
-        status.textContent = "İlerleme Excel'e gönderme isteği olarak iletildi; yanıt doğrulanamıyor.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
-      } catch (error) {
-        console.error("Görev ilerlemesi Excel'e gönderilemedi:", error);
-        status.textContent = "İlerleme bu cihazda kaydedildi ancak Excel'e gönderilemedi.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
-      }
-    }
+    window.addEventListener("online", flushTaskSyncQueue);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") flushTaskSyncQueue();
+    });
 
     function addTask(dayName) {
       const key = dayName.toLowerCase();
@@ -1484,13 +1310,22 @@
             status: (row[4] || "").trim() || "Bekliyor",
             done: /tamam|bitti|completed|done/i.test((row[4] || "").trim()),
             goal: (row[5] || "").trim(),
-            note: parsedNote.note,
-            progress: parsedNote.progress
+            note: parsedNote
           });
           importedTaskCount += 1;
         });
 
         if (importedTaskCount === 0) throw new Error("Haftalık programda geçerli görev bulunamadı.");
+
+        taskSyncQueue.forEach(update => {
+          const task = newTasks[update.day]?.find(candidate =>
+            getTaskSyncId(update.day, candidate) === update.id
+          );
+          if (task) {
+            task.status = update.status;
+            task.done = update.status === "Tamamlandı";
+          }
+        });
 
         const previousState = appState;
         const previousScheduleMeta = scheduleMeta;
@@ -1525,15 +1360,41 @@
         document.getElementById('view-' + t).classList.add('hidden');
         document.getElementById('nav-' + t).className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
       });
+      document.getElementById('view-deneme-sorulari').classList.add('hidden');
+      document.getElementById('view-soru-bankasi').classList.add('hidden');
+      document.getElementById('nav-soru-kumbaram').className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
+      document.getElementById('student-week-bar').classList.toggle('hidden', tab === 'soru-kumbaram');
+      document.getElementById('question-bank-nav').classList.toggle('hidden', tab !== 'soru-kumbaram');
+
+      if (tab === 'soru-kumbaram') {
+        document.getElementById('nav-soru-kumbaram').className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
+        switchQuestionBankTab('deneme-sorulari');
+        return;
+      }
+
       document.getElementById('view-' + tab).classList.remove('hidden');
       document.getElementById('nav-' + tab).className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
+    }
+
+    function switchQuestionBankTab(tab) {
+      ['deneme-sorulari', 'soru-bankasi'].forEach(item => {
+        document.getElementById('view-' + item).classList.toggle('hidden', item !== tab);
+        document.getElementById('nav-' + item).className = item === tab
+          ? "border-b-2 border-indigo-600 pb-2 pt-1 text-indigo-600"
+          : "border-b-2 border-transparent pb-2 pt-1 text-slate-500 transition hover:text-slate-900";
+      });
     }
 
     renderProfile();
     document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
     updateCurrentWeekLabel();
     renderProgram();
-    if (appSettings.syncOnLoad) fetchSheetData();
+    flushTaskSyncQueue();
+    if (appSettings.syncOnLoad) {
+      const syncProgram = () => fetchSheetData();
+      if ("requestIdleCallback" in window) window.requestIdleCallback(syncProgram, { timeout: 2500 });
+      else window.setTimeout(syncProgram, 0);
+    }
   </script>
 </body>
 </html>

@@ -20,12 +20,11 @@ function doPost(e) {
     } finally {
       lock.releaseLock();
     }
-  } else if (body.action === "updateStatus" || body.action === "updateProgress") {
+  } else if (body.action === "updateStatus") {
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {
-      if (body.action === "updateStatus") updateTaskStatus(sheet, body);
-      else updateTaskProgress(sheet, body);
+      updateTaskStatus(sheet, body);
     } finally {
       lock.releaseLock();
     }
@@ -87,15 +86,6 @@ function updateTaskStatus(sheet, body) {
   const row = findWeeklyProgramRow(sheet, body);
   if (row === -1) throw new Error("Haftalık programda görev bulunamadı.");
   sheet.getRange(row, 5).setValue(body.status);
-}
-
-function updateTaskProgress(sheet, body) {
-  if (typeof body.note !== "string" || body.note.length > 45000) {
-    throw new Error("Görev ilerleme notu geçersiz veya fazla uzun.");
-  }
-  const row = findWeeklyProgramRow(sheet, body);
-  if (row === -1) throw new Error("Haftalık programda görev bulunamadı.");
-  sheet.getRange(row, 7).setValue(body.note);
 }
 
 function findWeeklyProgramRow(sheet, body) {
