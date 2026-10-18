@@ -131,7 +131,7 @@
           📲 Uygulamayı yükle
         </button>
         <button id="camp-plan-button" type="button" onclick="applyAttachedCampPlan()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-indigo-50" role="menuitem">
-          📅 Kamp planını uygula / güncelle
+          📅 19–25 Ekim programını Excel'e uygula
         </button>
         <button id="sync-button" type="button" onclick="fetchSheetData()" class="w-full px-4 py-2.5 text-left text-sm text-indigo-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" role="menuitem">
           🔄 Senkronize Et
@@ -181,7 +181,7 @@
         </div>
       </div>
       <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-        ✓ 16–18 Ekim Kampı Aktif
+        ✓ 19–25 Ekim Programı Aktif
       </span>
     </div>
   </section>
@@ -386,27 +386,105 @@
       cumartesi: { duration: "6 saat 15 dakika", durationLabel: "Toplam süre" },
       pazar: { duration: "5 saat 30 dakika", durationLabel: "Toplam süre" }
     };
+    const PROVIDED_PROGRAM_WEEK_KEY = "2026-10-19";
+    const PROVIDED_WEEKLY_PROGRAM = {
+      pazartesi: [
+        ["Trigonometri 1-5. Bölüm (Tüm Videolar + Ödev Testi 1, 2, Birim Çember Özel, 3, 4, 5)", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["Fizik Bilimine Giriş (1-2. Ders + 3 Test) & Madde ve Özellikleri (1-4. Ders + 6 Test)", "345 Allstar TYT Fizik", "2 saat"],
+        ["Kimya Bilimi (1-5. Ders + 6 Test) & Atom ve Periyodik Sistem (1-2. Ders)", "345 Allstar TYT Kimya", "2 saat"],
+        ["Yaşam Bilimi Biyoloji (1-6. Ders + ÖSYM 1-2) & Canlı Yapısındaki Bileşikler (1-5. Ders)", "345 Allstar TYT Biyoloji", "2 saat"]
+      ],
+      salı: [
+        ["Trigonometri 6-10. Bölüm (Tüm Videolar + Ödev Testi 6A-B, 7A-B, 8, 9, 10)", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["Hareket (1-3. Ders + Karma 1-4 & Günlük Hayat 1-2 - 6 Test)", "345 Allstar TYT Fizik", "1.5 saat"],
+        ["Atom ve Periyodik Sistem Bitiş (3-5. Ders + Karma 1-3 & ÖSYM 1-3 - 6 Test)", "345 Allstar TYT Kimya", "1.5 saat"],
+        ["Canlı Yapısındaki Bileşikler Bitiş (6-19. Dersler + 8 ÖSYM Testi Tamamı)", "345 Allstar TYT Biyoloji", "3 saat"]
+      ],
+      çarşamba: [
+        ["Trigonometri 11-16. Bölüm (Tüm Videolar + Ödev Testi 11, 12, 13, 14A-B, 15A-B, 16A-B)", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["Kuvvet (1-4. Ders + Karma 1-4 & Günlük Hayat 1-2 - 6 Test)", "345 Allstar TYT Fizik", "1.5 saat"],
+        ["Kimyasal Türler Arası Etkileşimler - 1 (1-5. Dersler + Karma 1-2)", "345 Allstar TYT Kimya", "1.5 saat"],
+        ["Hücre Tamamı (1-15. Dersler + 6 ÖSYM Testi)", "345 Allstar TYT Biyoloji", "3 saat"]
+      ],
+      perşembe: [
+        ["Trigonometri 17-21. Bölüm (Teoremler, Grafik, Ters Trigo + Ödev Testi 17A-B, 18A-B, 19A-C, 20, 21)", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["İş-Güç-Enerji (1-2. Ders + 6 Test) & Isı ve Sıcaklık (1-4. Ders + 6 Test)", "345 Allstar TYT Fizik", "2.5 saat"],
+        ["Türler Arası Etkileşim Bitiş (6-7. Ders + 4 Test) & Maddenin Halleri (1-5. Ders + 6 Test)", "345 Allstar TYT Kimya", "2 saat"],
+        ["Sınıflandırma (1-2. Ders + ÖSYM 1) & Canlı Âlemleri Başlangıç (1-5. Ders)", "345 Allstar TYT Biyoloji", "1.5 saat"]
+      ],
+      cuma: [
+        ["Trigonometri 22-26. Bölüm (Toparlayalım 1, Toplam-Fark, Yarım Açı + Testler 23A-B, 24A-B, 25A-C, 26A-B)", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["Elektrostatik (1-2. Ders + 4 Test), Elektrik (6 Test) & Manyetizma (1. Ders + 3 Test)", "345 Allstar TYT Fizik", "2 saat"],
+        ["Doğa ve Kimya (1-2. Ders + 3 Test) & Kimyasal Hesaplamalar (1-7. Ders + 5 Test)", "345 Allstar TYT Kimya", "2.5 saat"],
+        ["Canlı Âlemleri Bitiş (6-10. Ders + 6 ÖSYM Testi Tamamı)", "345 Allstar TYT Biyoloji", "1.5 saat"]
+      ],
+      cumartesi: [
+        ["Trigonometri 27-35. Bölüm (Yarım Açı Soru, Denklemler, Toparlayalım 2 + Testler 27A-B, 28-34)", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["Basınç (1-3. Ders + 6 Test), Kaldırma Kuv. (1-2. Ders + 3 Test) & Dalgalar (5 Ders + 11 Test)", "345 Allstar TYT Fizik", "2.5 saat"],
+        ["Karışımlar (1-6. Ders + Karma 1-3 & ÖSYM 1-2 - 5 Test)", "345 Allstar TYT Kimya", "1.5 saat"],
+        ["Hücre Bölünmeleri ve Üreme (1-7. Ders + 6 ÖSYM Testi)", "345 Allstar TYT Biyoloji", "2 saat"]
+      ],
+      pazar: [
+        ["Trigonometri Mühürleme: ÖSYM Testleri (1-10) + Seçici Sorular Testi", "345 Allstar AYT Mat", "2 saat"],
+        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
+        ["Optik Tamamı: Aydınlanma, Düzlem/Küresel Ayna, Kırılma, Mercekler (13 Ders + 21 Test)", "345 Allstar TYT Fizik", "3 saat"],
+        ["Asit-Baz-Tuz (1-4. Ders + 5 Test) & Kimya Her Yerde (1-4. Ders + 2 Test)", "345 Allstar TYT Kimya", "1.5 saat"],
+        ["Ekosistem Ekolojisi ve Güncel Çevre Sorunları (1-10. Ders + 5 ÖSYM Testi)", "345 Allstar TYT Biyoloji", "1.5 saat"]
+      ]
+    };
+    const PROVIDED_PROGRAM_DATA = Object.fromEntries(Object.entries(PROVIDED_WEEKLY_PROGRAM).map(([day, tasks]) => [
+      day,
+      tasks.map(([title, sub, duration]) => ({ title, sub, duration, status: "Bekliyor", done: false }))
+    ]));
+    const PROVIDED_PROGRAM_SCHEDULE_META = Object.fromEntries(DAYS_INFO.map(day => [
+      day.name.toLocaleLowerCase("tr-TR"),
+      { duration: "9 saat", durationLabel: "Toplam süre" }
+    ]));
     // Ekli başlangıç planı yalnızca 12–18 Ekim 2026 haftası için geçerlidir.
     const isInitialCampWeek = getScheduleDate(0).getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
+    const currentScheduleWeekKey = getScheduleWeekKey();
+    const storedScheduleWeekKey = localStorage.getItem("furkan_program_week");
+    const isProvidedProgramWeek = currentScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
+    const hasScheduleWeekChanged = storedScheduleWeekKey !== null && storedScheduleWeekKey !== currentScheduleWeekKey;
+    const shouldLoadProvidedProgram = isProvidedProgramWeek && storedScheduleWeekKey !== currentScheduleWeekKey;
+    const shouldResetForScheduleWeek = hasScheduleWeekChanged || shouldLoadProvidedProgram;
     const storedProgramState = localStorage.getItem("furkan_program_state");
-    let appState = storedProgramState === null
+    let appState = shouldResetForScheduleWeek
+      ? JSON.parse(JSON.stringify(shouldLoadProvidedProgram
+        ? PROVIDED_PROGRAM_DATA
+        : Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]))))
+      : storedProgramState === null
       ? JSON.parse(JSON.stringify(isInitialCampWeek
         ? INITIAL_CAMP_DATA
         : Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]))))
       : JSON.parse(storedProgramState) || {};
+    if (shouldResetForScheduleWeek) localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+    localStorage.setItem("furkan_program_week", currentScheduleWeekKey);
     const storedScheduleMeta = localStorage.getItem("furkan_schedule_meta");
-    let scheduleMeta = storedScheduleMeta === null && storedProgramState === null && isInitialCampWeek
-      ? JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
-      : JSON.parse(storedScheduleMeta || "{}");
+    let scheduleMeta = shouldLoadProvidedProgram
+      ? JSON.parse(JSON.stringify(PROVIDED_PROGRAM_SCHEDULE_META))
+      : shouldResetForScheduleWeek
+        ? {}
+        : storedScheduleMeta === null && storedProgramState === null && isInitialCampWeek
+          ? JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
+          : JSON.parse(storedScheduleMeta || "{}");
+    if (shouldResetForScheduleWeek) localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
     const TASK_SYNC_QUEUE_KEY = "furkan_task_sync_queue";
-    let taskSyncQueue = JSON.parse(localStorage.getItem(TASK_SYNC_QUEUE_KEY) || "[]");
+    let taskSyncQueue = shouldResetForScheduleWeek ? [] : JSON.parse(localStorage.getItem(TASK_SYNC_QUEUE_KEY) || "[]");
+    if (shouldResetForScheduleWeek) localStorage.setItem(TASK_SYNC_QUEUE_KEY, "[]");
     let taskSyncRevision = 0;
     let isFlushingTaskSyncQueue = false;
     let taskSyncRetryTimer = null;
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
-    if (storedProgramState === null && isInitialCampWeek) {
+    if (shouldResetForScheduleWeek || (storedProgramState === null && isInitialCampWeek)) {
       appSettings.syncOnLoad = false;
       localStorage.setItem("furkan_settings", JSON.stringify(appSettings));
     }
@@ -449,6 +527,13 @@
       return today;
     }
 
+    function getScheduleWeekKey(referenceDate = new Date()) {
+      const monday = getScheduleDate(0, referenceDate);
+      const month = String(monday.getMonth() + 1).padStart(2, "0");
+      const day = String(monday.getDate()).padStart(2, "0");
+      return `${monday.getFullYear()}-${month}-${day}`;
+    }
+
     function formatScheduleDate(date) {
       return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" }).format(date);
     }
@@ -485,9 +570,17 @@
       const format = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
       document.getElementById("current-week-label").textContent =
         `Bu hafta: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
-      const showCampControls = monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
-      document.getElementById("camp-plan-status").classList.toggle("hidden", !showCampControls);
-      document.getElementById("camp-plan-button").classList.toggle("hidden", !showCampControls);
+      const isCampWeek = monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
+      const isProvidedWeek = getScheduleWeekKey(referenceDate) === PROVIDED_PROGRAM_WEEK_KEY;
+      const showPlanControls = isCampWeek || isProvidedWeek;
+      document.getElementById("camp-plan-status").classList.toggle("hidden", !showPlanControls);
+      document.getElementById("camp-plan-button").classList.toggle("hidden", !showPlanControls);
+      document.getElementById("camp-plan-status").textContent = isProvidedWeek
+        ? "✓ 19–25 Ekim Programı Aktif"
+        : "✓ 16–18 Ekim Kampı Aktif";
+      document.getElementById("camp-plan-button").textContent = isProvidedWeek
+        ? "📅 19–25 Ekim programını Excel'e uygula"
+        : "📅 Kamp planını uygula / güncelle";
     }
 
     function renderProfile() {
@@ -549,11 +642,15 @@
 
     function applyAttachedCampPlan() {
       closeProfileMenu();
-      if (!isInitialCampWeek) return;
-      if (!window.confirm("Bu işlem bu haftanın görevlerini güncel 16–18 Ekim kamp planıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?")) return;
+      const useProvidedProgram = currentScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
+      if (!isInitialCampWeek && !useProvidedProgram) return;
+      const confirmation = useProvidedProgram
+        ? "Bu işlem bu haftanın görevlerini 19–25 Ekim programıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?"
+        : "Bu işlem bu haftanın görevlerini güncel 16–18 Ekim kamp planıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?";
+      if (!window.confirm(confirmation)) return;
 
-      appState = JSON.parse(JSON.stringify(INITIAL_CAMP_DATA));
-      scheduleMeta = JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META));
+      appState = JSON.parse(JSON.stringify(useProvidedProgram ? PROVIDED_PROGRAM_DATA : INITIAL_CAMP_DATA));
+      scheduleMeta = JSON.parse(JSON.stringify(useProvidedProgram ? PROVIDED_PROGRAM_SCHEDULE_META : INITIAL_SCHEDULE_META));
       appSettings.syncOnLoad = false;
       saveState();
       localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
@@ -1308,18 +1405,32 @@
           newScheduleMeta[dayKey] = dayMeta;
 
           const parsedNote = parseTaskNote(row[6] || "");
+          const taskGoal = (row[5] || "").trim();
+          const taskDuration = parseDurationMinutes(taskGoal) === null ? "" : taskGoal;
           newTasks[dayKey].push({
             title: title || sub,
             sub: title && sub ? sub : "",
             status: (row[4] || "").trim() || "Bekliyor",
             done: /tamam|bitti|completed|done/i.test((row[4] || "").trim()),
-            goal: (row[5] || "").trim(),
+            duration: taskDuration,
+            goal: taskDuration ? "" : taskGoal,
             note: parsedNote
           });
           importedTaskCount += 1;
         });
 
         if (importedTaskCount === 0) throw new Error("Haftalık programda geçerli görev bulunamadı.");
+        if (isProvidedProgramWeek) {
+          const expectedTasks = Object.entries(PROVIDED_WEEKLY_PROGRAM).flatMap(([day, tasks]) =>
+            tasks.map(([title, sub]) => JSON.stringify([day, title, sub]))
+          );
+          const importedTasks = new Set(Object.entries(newTasks).flatMap(([day, tasks]) =>
+            tasks.map(task => JSON.stringify([day, task.title, task.sub || ""]))
+          ));
+          if (expectedTasks.length !== importedTaskCount || expectedTasks.some(task => !importedTasks.has(task))) {
+            throw new Error("Excel'deki haftalık program 19–25 Ekim planıyla eşleşmiyor; eski haftanın görevleri siteye yüklenmedi. Önce profilden 19–25 Ekim programını Excel'e uygula.");
+          }
+        }
 
         taskSyncQueue.forEach(update => {
           const task = newTasks[update.day]?.find(candidate =>
