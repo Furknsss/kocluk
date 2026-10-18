@@ -163,8 +163,10 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
-        <span id="current-week-label">Bu haftanın programı</span>
+      <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700">
+        <button type="button" onclick="changeScheduleWeek(-1)" aria-label="Önceki haftayı göster" title="Önceki hafta" class="px-3 py-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600">←</button>
+        <span id="current-week-label" class="py-1.5">Bu haftanın programı</span>
+        <button type="button" onclick="changeScheduleWeek(1)" aria-label="Sonraki haftayı göster" title="Sonraki hafta" class="px-3 py-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-indigo-600">→</button>
       </div>
       <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
         <span id="weekly-progress-label">Haftalık ilerleme: hesaplanıyor</span>
@@ -451,36 +453,55 @@
     const currentScheduleWeekKey = getScheduleWeekKey();
     const storedScheduleWeekKey = localStorage.getItem("furkan_program_week");
     const isProvidedProgramWeek = currentScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
-    const hasScheduleWeekChanged = storedScheduleWeekKey !== null && storedScheduleWeekKey !== currentScheduleWeekKey;
-    const shouldLoadProvidedProgram = isProvidedProgramWeek && storedScheduleWeekKey !== currentScheduleWeekKey;
-    const shouldResetForScheduleWeek = hasScheduleWeekChanged || shouldLoadProvidedProgram;
     const storedProgramState = localStorage.getItem("furkan_program_state");
-    let appState = shouldResetForScheduleWeek
-      ? JSON.parse(JSON.stringify(shouldLoadProvidedProgram
-        ? PROVIDED_PROGRAM_DATA
-        : Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]))))
-      : storedProgramState === null
-      ? JSON.parse(JSON.stringify(isInitialCampWeek
-        ? INITIAL_CAMP_DATA
-        : Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]))))
-      : JSON.parse(storedProgramState) || {};
-    if (shouldResetForScheduleWeek) localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+    const PROGRAM_WEEKS_KEY = "furkan_program_weeks";
+    const programWeeks = JSON.parse(localStorage.getItem(PROGRAM_WEEKS_KEY) || "{}");
+    if (storedScheduleWeekKey && storedProgramState !== null && !programWeeks[storedScheduleWeekKey]) {
+      programWeeks[storedScheduleWeekKey] = {
+        program: JSON.parse(storedProgramState) || {},
+        scheduleMeta: JSON.parse(localStorage.getItem("furkan_schedule_meta") || "{}")
+      };
+    }
+    const initialWeekKey = getScheduleWeekKey(new Date(2026, 9, 16));
+    if (!programWeeks[initialWeekKey]) {
+      programWeeks[initialWeekKey] = {
+        program: JSON.parse(JSON.stringify(INITIAL_CAMP_DATA)),
+        scheduleMeta: JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
+      };
+    }
+    const emptyWeekProgram = () => Object.fromEntries(
+      DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []])
+    );
+    if (!programWeeks[currentScheduleWeekKey]) {
+      programWeeks[currentScheduleWeekKey] = {
+        program: JSON.parse(JSON.stringify(isInitialCampWeek
+          ? INITIAL_CAMP_DATA
+          : isProvidedProgramWeek
+            ? PROVIDED_PROGRAM_DATA
+            : emptyWeekProgram())),
+        scheduleMeta: JSON.parse(JSON.stringify(isInitialCampWeek
+          ? INITIAL_SCHEDULE_META
+          : isProvidedProgramWeek
+            ? PROVIDED_PROGRAM_SCHEDULE_META
+            : {}))
+      };
+    }
+    const shouldResetForScheduleWeek = storedScheduleWeekKey !== null &&
+      storedScheduleWeekKey !== currentScheduleWeekKey;
+    let appState = JSON.parse(JSON.stringify(programWeeks[currentScheduleWeekKey].program));
     localStorage.setItem("furkan_program_week", currentScheduleWeekKey);
-    const storedScheduleMeta = localStorage.getItem("furkan_schedule_meta");
-    let scheduleMeta = shouldLoadProvidedProgram
-      ? JSON.parse(JSON.stringify(PROVIDED_PROGRAM_SCHEDULE_META))
-      : shouldResetForScheduleWeek
-        ? {}
-        : storedScheduleMeta === null && storedProgramState === null && isInitialCampWeek
-          ? JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
-          : JSON.parse(storedScheduleMeta || "{}");
-    if (shouldResetForScheduleWeek) localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
+    let scheduleMeta = JSON.parse(JSON.stringify(programWeeks[currentScheduleWeekKey].scheduleMeta || {}));
     const TASK_SYNC_QUEUE_KEY = "furkan_task_sync_queue";
     let taskSyncQueue = shouldResetForScheduleWeek ? [] : JSON.parse(localStorage.getItem(TASK_SYNC_QUEUE_KEY) || "[]");
     if (shouldResetForScheduleWeek) localStorage.setItem(TASK_SYNC_QUEUE_KEY, "[]");
+    localStorage.setItem(PROGRAM_WEEKS_KEY, JSON.stringify(programWeeks));
+    localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+    localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
     let taskSyncRevision = 0;
     let isFlushingTaskSyncQueue = false;
     let taskSyncRetryTimer = null;
+    let viewedScheduleWeekKey = currentScheduleWeekKey;
+    let viewedWeekOffset = 0;
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
@@ -496,7 +517,41 @@
     const shownReminderNotifications = new Set();
 
     function saveState() {
-      localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+      programWeeks[viewedScheduleWeekKey] = {
+        program: appState,
+        scheduleMeta
+      };
+      localStorage.setItem(PROGRAM_WEEKS_KEY, JSON.stringify(programWeeks));
+      if (viewedScheduleWeekKey === currentScheduleWeekKey) {
+        localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+        localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
+      }
+    }
+
+    function isViewingCurrentWeek() {
+      return viewedScheduleWeekKey === currentScheduleWeekKey;
+    }
+
+    function changeScheduleWeek(weekOffset) {
+      saveState();
+      viewedWeekOffset += weekOffset;
+      const monday = getScheduleDate(0);
+      monday.setDate(monday.getDate() + viewedWeekOffset * 7);
+      viewedScheduleWeekKey = getScheduleWeekKey(monday);
+
+      if (!programWeeks[viewedScheduleWeekKey]) {
+        programWeeks[viewedScheduleWeekKey] = {
+          program: emptyWeekProgram(),
+          scheduleMeta: {}
+        };
+        localStorage.setItem(PROGRAM_WEEKS_KEY, JSON.stringify(programWeeks));
+      }
+
+      appState = JSON.parse(JSON.stringify(programWeeks[viewedScheduleWeekKey].program));
+      scheduleMeta = JSON.parse(JSON.stringify(programWeeks[viewedScheduleWeekKey].scheduleMeta || {}));
+      document.getElementById("sync-button").disabled = !isViewingCurrentWeek();
+      renderProgram();
+      if (isViewingCurrentWeek()) flushTaskSyncQueue();
     }
 
     function parseTaskNote(rawNote) {
@@ -564,14 +619,22 @@
       return `${hours} saat ${minutes} dakika`;
     }
 
-    function updateCurrentWeekLabel(referenceDate = new Date()) {
+    function updateCurrentWeekLabel() {
+      const [year, month, day] = viewedScheduleWeekKey.split("-").map(Number);
+      const referenceDate = new Date(year, month - 1, day);
       const monday = getScheduleDate(0, referenceDate);
       const sunday = getScheduleDate(6, referenceDate);
       const format = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
+      const weekDescription = viewedWeekOffset === 0
+        ? "Bu hafta"
+        : viewedWeekOffset < 0
+          ? `${Math.abs(viewedWeekOffset)} hafta önce`
+          : `${viewedWeekOffset} hafta sonra`;
       document.getElementById("current-week-label").textContent =
-        `Bu hafta: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
-      const isCampWeek = monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
-      const isProvidedWeek = getScheduleWeekKey(referenceDate) === PROVIDED_PROGRAM_WEEK_KEY;
+        `${weekDescription}: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
+      const isCampWeek = isViewingCurrentWeek() &&
+        monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
+      const isProvidedWeek = isViewingCurrentWeek() && viewedScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
       const showPlanControls = isCampWeek || isProvidedWeek;
       document.getElementById("camp-plan-status").classList.toggle("hidden", !showPlanControls);
       document.getElementById("camp-plan-button").classList.toggle("hidden", !showPlanControls);
@@ -581,6 +644,7 @@
       document.getElementById("camp-plan-button").textContent = isProvidedWeek
         ? "📅 19–25 Ekim programını Excel'e uygula"
         : "📅 Kamp planını uygula / güncelle";
+      document.getElementById("sync-button").disabled = !isViewingCurrentWeek();
     }
 
     function renderProfile() {
@@ -642,7 +706,7 @@
 
     function applyAttachedCampPlan() {
       closeProfileMenu();
-      const useProvidedProgram = currentScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
+      const useProvidedProgram = isViewingCurrentWeek() && viewedScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
       if (!isInitialCampWeek && !useProvidedProgram) return;
       const confirmation = useProvidedProgram
         ? "Bu işlem bu haftanın görevlerini 19–25 Ekim programıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?"
@@ -662,6 +726,11 @@
 
     async function syncWeeklyPlanToSheet() {
       const status = document.getElementById("sync-status");
+      if (!isViewingCurrentWeek()) {
+        status.textContent = "Geçmiş haftalar yalnızca bu cihazda saklanır; Excel eşitlemesi kapalı.";
+        status.className = "block px-4 pb-2 text-xs font-semibold text-slate-500";
+        return;
+      }
       status.textContent = "Plan siteye kaydedildi; Excel'e gönderiliyor...";
       status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
       const rows = DAYS_INFO.flatMap(day => {
@@ -937,11 +1006,13 @@
       grid.innerHTML = "";
       updateCurrentWeekLabel();
       updateWeeklyProgress();
+      const [year, month, day] = viewedScheduleWeekKey.split("-").map(Number);
+      const weekStart = new Date(year, month - 1, day);
       const today = new Date();
 
       DAYS_INFO.forEach(d => {
         const key = d.name.toLocaleLowerCase("tr-TR");
-        const date = getScheduleDate(d.offset, today);
+        const date = getScheduleDate(d.offset, weekStart);
         const isToday = date.toDateString() === today.toDateString();
         const col = document.createElement("div");
         col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
@@ -1177,7 +1248,7 @@
       task.status = task.done ? "Tamamlandı" : "Bekliyor";
       saveState();
       renderProgram();
-      syncTaskStatusToSheet(dayKey, task);
+      if (isViewingCurrentWeek()) syncTaskStatusToSheet(dayKey, task);
     }
 
     function getTaskSyncId(dayKey, task) {
@@ -1191,6 +1262,7 @@
     }
 
     function syncTaskStatusToSheet(dayKey, task) {
+      if (!isViewingCurrentWeek()) return;
       const update = {
         id: getTaskSyncId(dayKey, task),
         day: dayKey,
@@ -1222,7 +1294,7 @@
     }
 
     async function flushTaskSyncQueue() {
-      if (isFlushingTaskSyncQueue || !navigator.onLine || taskSyncQueue.length === 0) return;
+      if (!isViewingCurrentWeek() || isFlushingTaskSyncQueue || !navigator.onLine || taskSyncQueue.length === 0) return;
       isFlushingTaskSyncQueue = true;
 
       try {
@@ -1326,6 +1398,11 @@
     async function fetchSheetData() {
       const button = document.getElementById("sync-button");
       const status = document.getElementById("sync-status");
+      if (!isViewingCurrentWeek()) {
+        status.textContent = "Geçmiş haftaların kayıtları değiştirilmez; Excel eşitlemesi yalnızca bu hafta için kullanılabilir.";
+        status.className = "text-xs font-semibold text-slate-500";
+        return false;
+      }
       button.disabled = true;
       status.textContent = "Senkronize ediliyor...";
       status.className = "text-xs font-semibold text-slate-500";
@@ -1466,7 +1543,7 @@
         status.className = "text-xs font-semibold text-rose-600";
         return false;
       } finally {
-        button.disabled = false;
+        button.disabled = !isViewingCurrentWeek();
       }
     }
 
