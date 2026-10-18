@@ -3,1401 +3,236 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="description" content="Haftalık çalışma programını takip et, görevlerini tamamla ve ilerlemeni gör." />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Koçluk" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="./icon-180.png" />
-  <title>Furkan | Program</title>
-  <link rel="preconnect" href="https://cdn.tailwindcss.com" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <title>Furkan | İTÜ Elektrik İlk 5.000 Koçluk Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #ffffff;
-      color: #1e293b;
-      margin: 0;
-      padding: 0;
-    }
-    /* Baykuş Orijinal Gri Kart Stili */
-    .baykus-card {
-      background-color: #f4f5f7;
-      border: 1px solid #e4e4e7;
-      border-radius: 6px;
-      padding: 12px 14px;
-      position: relative;
-      transition: all 0.15s ease;
-      cursor: pointer;
-      touch-action: auto;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
-    .baykus-card.task-dragging { opacity: 1; }
-    .task-drag-handle {
-      touch-action: none;
-      cursor: grab;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-    .task-drag-handle:active { cursor: grabbing; }
-    .task-drag-placeholder { visibility: hidden; pointer-events: none; }
-    .col-border.day-drop-target { background-color: #eef2ff; }
-    .baykus-card:hover {
-      background-color: #ffffff;
-      border-color: #cbd5e1;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .baykus-card.completed {
-      background-color: #f0fdf4;
-      border-color: #bbf7d0;
-    }
-    .baykus-card.completed .card-title {
-      text-decoration: line-through;
-      color: #15803d;
-    }
-    .col-border {
-      border-right: 1px solid #f1f5f9;
-      background: #ffffff;
-    }
-    .col-border:last-child {
-      border-right: none;
-    }
-    ::-webkit-scrollbar { height: 6px; width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    @media (max-width: 639px) {
-      #app-header {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-areas: "brand profile" "nav nav";
-        gap: 8px 16px;
-        padding: 10px 16px;
-      }
-      #app-header > div:first-child { display: contents; }
-      #app-header > div:first-child > div:first-child { grid-area: brand; }
-      #app-nav { grid-area: nav; min-width: 0; gap: 18px; overflow-x: auto; scrollbar-width: none; }
-      #app-nav::-webkit-scrollbar { display: none; }
-      #app-nav button { flex: 0 0 auto; white-space: nowrap; }
-      #profile-menu-wrap { grid-area: profile; }
-      #student-week-bar { padding-left: 16px; padding-right: 16px; }
-      #student-week-row { align-items: flex-start; gap: 12px; flex-direction: column; }
-      #sync-controls { width: 100%; flex-wrap: wrap; }
-      #view-program { padding-left: 12px; padding-right: 12px; }
-      #kanban-grid { grid-template-columns: repeat(7, minmax(82vw, 1fr)); }
-      #view-analiz, #view-deneme { padding: 20px 16px; }
-    }
+    body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
+    .task-card { transition: all 0.2s ease; }
+    .task-card.done { opacity: 0.6; border-color: #10b981 !important; background-color: rgba(16, 185, 129, 0.08); }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen p-4 md:p-8">
 
-  <!-- ÜST NAVİGASYON (BAYKUŞ BİREBİR) -->
-  <header id="app-header" class="border-b border-slate-200 px-8 py-3.5 flex items-center justify-between bg-white sticky top-0 z-50">
-    <div class="flex items-center space-x-8">
-      <div class="flex items-center space-x-2 cursor-pointer">
-        <svg class="w-7 h-7 text-slate-900" viewBox="0 0 36 36" fill="currentColor">
-          <path d="M18 3C10.8 3 5 8.8 5 16c0 5.2 3.1 9.7 7.6 11.8L18 33l5.4-5.2C27.9 25.7 31 21.2 31 16c0-7.2-5.8-13-13-13zm-4.5 15.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm9 0c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
-        </svg>
-      </div>
-      <nav id="app-nav" class="flex items-center space-x-6 text-[13px] font-bold">
-        <button onclick="switchTab('program')" id="nav-program" class="text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1">Program</button>
-        <button onclick="switchTab('analiz')" id="nav-analiz" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Kaynak &amp; İlerleme</button>
-        <button onclick="switchTab('deneme')" id="nav-deneme" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Deneme Röntgeni</button>
-        <button onclick="switchTab('soru-kumbaram')" id="nav-soru-kumbaram" class="text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition">Soru Kumbaram</button>
-      </nav>
-    </div>
-
-    <!-- Sağ Profil -->
-    <div id="profile-menu-wrap" class="relative">
-      <button id="profile-menu-button" type="button" onclick="toggleProfileMenu()" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-slate-950">
-        <span id="header-profile-name">Furkan</span>
-        <span class="w-8 h-8 overflow-hidden rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
-          <img id="header-profile-photo" class="hidden w-full h-full object-cover" alt="Profil fotoğrafı">
-          <span id="header-profile-initial">F</span>
-        </span>
-      </button>
-      <div id="profile-menu" class="hidden absolute right-0 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-lg z-[60]" role="menu">
-        <button type="button" onclick="openProfileModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">Profil</button>
-        <button type="button" onclick="openSettingsModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">Ayarlar</button>
-        <button type="button" onclick="openReminderModal()" class="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50" role="menuitem">🔔 Hatırlatıcılar</button>
-        <button id="install-button" type="button" onclick="installApp()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-slate-50" role="menuitem">
-          📲 Uygulamayı yükle
-        </button>
-        <button id="camp-plan-button" type="button" onclick="applyAttachedCampPlan()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-indigo-50" role="menuitem">
-          📅 Kamp planını uygula / güncelle
-        </button>
-        <button id="sync-button" type="button" onclick="fetchSheetData()" class="w-full px-4 py-2.5 text-left text-sm text-indigo-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" role="menuitem">
-          🔄 Senkronize Et
-        </button>
-        <span id="sync-status" class="block px-4 pb-2 text-xs font-semibold" role="status" aria-live="polite"></span>
-      </div>
-    </div>
-  </header>
-
-  <nav id="question-bank-nav" class="hidden border-b border-slate-100 bg-white px-8 py-2.5" aria-label="Soru Kumbaram">
-    <div class="flex items-center gap-5 text-xs font-bold">
-      <button type="button" onclick="switchQuestionBankTab('deneme-sorulari')" id="nav-deneme-sorulari" class="border-b-2 border-indigo-600 pb-2 pt-1 text-indigo-600">Deneme Soruları</button>
-      <button type="button" onclick="switchQuestionBankTab('soru-bankasi')" id="nav-soru-bankasi" class="border-b-2 border-transparent pb-2 pt-1 text-slate-500 transition hover:text-slate-900">Soru Bankası</button>
-    </div>
-  </nav>
-
-  <!-- ÖĞRENCİ & HAFTA SEÇİM BARI -->
-  <section id="student-week-bar" class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
-    <div id="student-week-row" class="flex items-center justify-between mb-3">
-      <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 overflow-hidden rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
-          <img id="student-profile-photo" class="hidden w-full h-full object-cover" alt="Profil fotoğrafı">
-          <span id="student-profile-initial">F</span>
+  <div class="max-w-5xl mx-auto space-y-6">
+    <!-- Üst Başlık & Durum -->
+    <header class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-lg">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-full">19 - 25 Ekim Kampı</span>
+          <span id="syncBadge" class="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">● E-Tablo Senkron Aktif</span>
         </div>
-        <div>
-          <div id="student-profile-name" class="text-xs font-bold text-slate-800 leading-none">Furkan</div>
+        <h1 class="text-2xl md:text-3xl font-extrabold mt-2 tracking-tight">Furkan — İTÜ Elektrik (İlk 5.000)</h1>
+        <p class="text-slate-400 text-sm mt-1">Günlük 9 Saat: 2s AYT Trigo + 1s Geometri + 6s Akıllı Dengeli TYT Fen</p>
+      </div>
+
+      <div class="flex flex-col items-end gap-2">
+        <div class="text-right">
+          <span class="text-xs text-slate-400 block">Haftalık İlerleme</span>
+          <span id="progressText" class="text-2xl font-black text-emerald-400">0 / 35 (%0)</span>
         </div>
-      </div>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-slate-700">
-        <span id="current-week-label">Bu haftanın programı</span>
-      </div>
-      <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
-        <span id="weekly-progress-label">Haftalık ilerleme: hesaplanıyor</span>
-        <div
-          id="weekly-progress"
-          class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100"
-          role="progressbar"
-          aria-label="Haftalık görev tamamlama oranı"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="0"
-        >
-          <div id="weekly-progress-bar" class="h-full rounded-full bg-emerald-500 transition-[width] duration-300"></div>
-        </div>
-      </div>
-      <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-        ✓ 16–18 Ekim Kampı Aktif
-      </span>
-    </div>
-  </section>
-
-  <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
-  <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
-    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px] sm:min-w-[1260px] lg:min-w-0">
-      <!-- JS ile doldurulur -->
-    </div>
-  </main>
-
-  <!-- KAYNAK & İLERLEME -->
-  <main id="view-analiz" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
-    <h2 class="text-base font-bold text-slate-800 mb-4">📚 Gerçek Kaynak ve Konu Takip Envanteri</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
-        <div class="font-bold text-sm text-slate-900">📖 345 Allstar Geometri</div>
-        <div class="mt-1.5 space-y-1 text-xs text-slate-600">
-          <div>• <strong>Üçgenler konu anlatımı:</strong> Videolar tamamlandı ✓</div>
-          <div>• <strong>GGÇK boş kalanlar:</strong> Açıortay, Kenarortay, Benzerlik ve Açı-Kenar bağlantıları; soru çözümü yapılacak.</div>
-        </div>
-      </div>
-      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
-        <div class="font-bold text-sm text-slate-900">📖 Eyüp B. TYT-AYT Geometri Soru Bankası</div>
-        <div class="mt-1.5 space-y-1 text-xs text-slate-600">
-          <div>• <strong>Bitenler:</strong> Açılar, Dik Üçgen ✓</div>
-          <div>• <strong>Az kalanlar:</strong> İkizkenar ve Eşkenar (her birinde 1 test + 1 yorum)</div>
-          <div>• <strong>Boş olanlar:</strong> Açıortay, Kenarortay, Alan, Benzerlik ve Açı-Kenar bağlantıları</div>
-        </div>
-      </div>
-      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
-        <div class="font-bold text-sm text-slate-900">📖 Problemler (3D TYT VDD + 345 Sıfır Risk)</div>
-        <div class="mt-1.5 space-y-1 text-xs text-slate-600">
-          <div>• <strong>3D TYT VDD:</strong> Problem videoları tamamlandı ✓</div>
-          <div>• <strong>345 Sıfır Risk:</strong> Grafik Problemleri boş; bazı konuların sonunda 1-2 test kaldı.</div>
-        </div>
-      </div>
-      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
-        <div class="font-bold text-sm text-slate-900">📅 AYT Matematik &amp; TYT Fen</div>
-        <div class="mt-1.5 text-xs text-slate-600">Kaynak ve video planı haftalık görüşmede netleştirilince programa eklenecek.</div>
-      </div>
-    </div>
-  </main>
-
-  <!-- DENEME RÖNTGENİ -->
-  <main id="view-deneme" class="hidden flex-1 px-8 py-6 max-w-6xl mx-auto w-full">
-    <h2 class="text-base font-bold text-slate-800 mb-4">📊 Deneme Röntgeni</h2>
-    <div class="border border-slate-200 rounded-xl p-5 bg-slate-50 text-xs text-slate-600">
-      Henüz deneme girilmedi. Çözülen denemeler buraya işlenecek.
-    </div>
-  </main>
-
-  <main id="view-deneme-sorulari" class="hidden flex-1"></main>
-  <main id="view-soru-bankasi" class="hidden flex-1"></main>
-
-  <div id="ios-install-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="ios-install-title" onclick="if (event.target === this) closeModal('ios-install-modal')">
-    <section class="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-      <div class="mb-3 flex items-center justify-between">
-        <h2 id="ios-install-title" class="text-lg font-bold text-slate-900">Ana ekrana ekle</h2>
-        <button type="button" onclick="closeModal('ios-install-modal')" aria-label="Pencereyi kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
-      </div>
-      <p class="text-sm leading-relaxed text-slate-600">Safari’de paylaş simgesine dokun, ardından <strong>Ana Ekrana Ekle</strong> seçeneğini seç. Uygulama ana ekranda tam ekran açılır.</p>
-      <button type="button" onclick="closeModal('ios-install-modal')" class="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">Tamam</button>
-    </section>
-  </div>
-
-  <div id="profile-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" onclick="if (event.target === this) closeModal('profile-modal')">
-    <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-      <div class="mb-5 flex items-center justify-between">
-        <h2 id="profile-modal-title" class="text-lg font-bold text-slate-900">Profil</h2>
-        <button type="button" onclick="closeModal('profile-modal')" aria-label="Profili kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
-      </div>
-      <form onsubmit="saveProfile(event)">
-        <div class="mb-5 flex items-center gap-4">
-          <span class="h-16 w-16 overflow-hidden rounded-full bg-slate-900 text-white flex items-center justify-center text-xl font-bold">
-            <img id="profile-photo-preview" class="hidden h-full w-full object-cover" alt="Profil fotoğrafı önizlemesi">
-            <span id="profile-photo-initial">F</span>
-          </span>
-          <label class="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            Fotoğraf seç
-            <input id="profile-photo-input" type="file" accept="image/*" class="sr-only" onchange="previewProfilePhoto(this)">
-          </label>
-        </div>
-        <label class="mb-4 block text-sm font-semibold text-slate-700" for="profile-name-input">
-          Ad
-          <input id="profile-name-input" maxlength="50" required class="mt-1.5 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-        </label>
-        <label class="mb-4 block text-sm font-semibold text-slate-700" for="profile-grade-input">
-          Sınıf durumu
-          <select id="profile-grade-input" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-            <option value="">Seçiniz</option>
-            <option value="Mezun">Mezun</option>
-            <option value="12. sınıf">12. sınıf</option>
-            <option value="11. sınıf">11. sınıf</option>
-            <option value="10. sınıf">10. sınıf</option>
-            <option value="9. sınıf">9. sınıf</option>
-          </select>
-        </label>
-        <label class="mb-5 block text-sm font-semibold text-slate-700" for="profile-track-input">
-          Alan
-          <select id="profile-track-input" class="mt-1.5 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-            <option value="">Seçiniz</option>
-            <option value="Sayısal">Sayısal</option>
-            <option value="Eşit Ağırlık">Eşit Ağırlık</option>
-            <option value="Sözel">Sözel</option>
-            <option value="Dil">Dil</option>
-          </select>
-        </label>
-        <div class="flex justify-end gap-2">
-          <button type="button" onclick="closeModal('profile-modal')" class="rounded-md px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Vazgeç</button>
-          <button id="save-profile-button" type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60">Kaydet</button>
-        </div>
-      </form>
-    </section>
-  </div>
-
-  <div id="settings-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" onclick="if (event.target === this) closeModal('settings-modal')">
-    <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-      <div class="mb-5 flex items-center justify-between">
-        <h2 id="settings-modal-title" class="text-lg font-bold text-slate-900">Ayarlar</h2>
-        <button type="button" onclick="closeModal('settings-modal')" aria-label="Ayarları kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
-      </div>
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-4">
-        <input id="sync-on-load" type="checkbox" class="mt-0.5 accent-indigo-600" onchange="updateSyncSetting(this.checked)">
-        <span>
-          <span class="block text-sm font-semibold text-slate-800">Sayfa açılınca programı eşitle</span>
-          <span class="mt-1 block text-xs leading-relaxed text-slate-500">Açıldığında Excel’deki en güncel haftalık planı yükler.</span>
-        </span>
-      </label>
-      <div class="mt-5 flex justify-end">
-        <button type="button" onclick="closeModal('settings-modal')" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">Tamam</button>
-      </div>
-    </section>
-  </div>
-
-  <div id="reminder-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="reminder-modal-title" onclick="if (event.target === this) closeModal('reminder-modal')">
-    <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-      <div class="mb-3 flex items-center justify-between">
-        <h2 id="reminder-modal-title" class="text-lg font-bold text-slate-900">🔔 Hatırlatıcılar</h2>
-        <button type="button" onclick="closeModal('reminder-modal')" aria-label="Hatırlatıcıları kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
-      </div>
-      <p class="text-xs leading-relaxed text-slate-600">Gün sonu raporu ve haftalık görüşme için takvim hatırlatıcısı ekleyebilirsin.</p>
-      <div class="mt-4 space-y-2.5">
-        <button type="button" onclick="addCalendarReminder('daily')" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-left text-xs font-bold text-white hover:bg-indigo-700">
-          📅 Her akşam 22:30 rapor hatırlatıcısı ekle
-        </button>
-        <button type="button" onclick="addCalendarReminder('weekly')" class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-left text-xs font-bold text-white hover:bg-emerald-700">
-          📅 Her pazar 21:00 görüşme hatırlatıcısı ekle
-        </button>
-        <button type="button" onclick="enableBrowserNotification()" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50">
-          💻 Bu cihazda tarayıcı bildirimlerini aç
+        <button onclick="pushAllToSheet()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-600 transition">
+          🔄 Tabloyu Şimdi Eşitle
         </button>
       </div>
-      <p class="mt-3 text-[11px] leading-relaxed text-slate-400">Tarayıcı bildirimi, uygulama açıkken çalışır. Uygulama kapalıyken hatırlatma için takvime ekle.</p>
-      <button type="button" onclick="closeModal('reminder-modal')" class="mt-4 w-full py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600">Kapat</button>
-    </section>
+    </header>
+
+    <!-- İlerleme Çubuğu -->
+    <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
+      <div id="progressBar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+    </div>
+
+    <!-- Gün Seçici Sekmeler -->
+    <div id="dayTabs" class="flex flex-wrap gap-2"></div>
+
+    <!-- Seçili Günün Görev Listesi -->
+    <div id="tasksContainer" class="space-y-3"></div>
+
+    <!-- Sabit Hatırlatmalar -->
+    <footer class="bg-slate-800/60 border border-slate-700/70 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-400 gap-2">
+      <div>⏰ <strong>Her Akşam 22:30:</strong> Kronometre & Görev Fotoğraf Raporu</div>
+      <div>📅 <strong>Pazar 21:00:</strong> Haftalık Ana Değerlendirme Toplantısı</div>
+    </footer>
   </div>
 
   <script>
-    // CSV URL BAĞLANTIN (Canlı Senkron İçin)
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydDvO1JOiiwDWzi_HSC0wsehMzioy02OTH1srpXMkv8agnBWn9MtxBqrDUn9MT8q_uYw/exec";
+    // Google Apps Script Web App URL'nizi buraya yapıştırın (Mevcut URL varsa koruyun)
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydDvO1JOiiwDWzi_HSC0wsehMzioy02OTH1srpXMkv8agnBWn9MtxBqrDUn9MT8q_uYw/exec";
 
-    const DAYS_INFO = [
-      { name: "Pazartesi", offset: 0 },
-      { name: "Salı", offset: 1 },
-      { name: "Çarşamba", offset: 2 },
-      { name: "Perşembe", offset: 3 },
-      { name: "Cuma", offset: 4 },
-      { name: "Cumartesi", offset: 5 },
-      { name: "Pazar", offset: 6 }
+    const INITIAL_TASKS = [
+      // 19 EKİM PAZARTESİ (9 Saat)
+      { id: "pzt-1", day: "19 Ekim Pazartesi", title: "Trigonometri 1-5. Bölüm (Tüm Videolar + Ödev Testi 1, 2, Birim Çember Özel, 3, 4, 5)", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "pzt-2", day: "19 Ekim Pazartesi", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "pzt-3", day: "19 Ekim Pazartesi", title: "Fizik Bilimine Giriş (1-2. Ders + 3 Test) & Madde ve Özellikleri (1-4. Ders + 6 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 2 Saat", done: false },
+      { id: "pzt-4", day: "19 Ekim Pazartesi", title: "Kimya Bilimi (1-5. Ders + 6 Test) & Atom ve Periyodik Sistem (1-2. Ders)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 2 Saat", done: false },
+      { id: "pzt-5", day: "19 Ekim Pazartesi", title: "Yaşam Bilimi Biyoloji (1-6. Ders + ÖSYM 1-2) & Canlı Yapısındaki Bileşikler (1-5. Ders)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 2 Saat", done: false },
+
+      // 20 EKİM SALI (9 Saat)
+      { id: "sal-1", day: "20 Ekim Salı", title: "Trigonometri 6-10. Bölüm (Tüm Videolar + Ödev Testi 6A-B, 7A-B, 8, 9, 10)", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "sal-2", day: "20 Ekim Salı", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "sal-3", day: "20 Ekim Salı", title: "Hareket (1-3. Ders + Karma 1-4 & Günlük Hayat 1-2 - 6 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 1.5 Saat", done: false },
+      { id: "sal-4", day: "20 Ekim Salı", title: "Atom ve Periyodik Sistem Bitiş (3-5. Ders + Karma 1-3 & ÖSYM 1-3 - 6 Test)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 1.5 Saat", done: false },
+      { id: "sal-5", day: "20 Ekim Salı", title: "Canlı Yapısındaki Bileşikler Bitiş (6-19. Dersler + 8 ÖSYM Testi Tamamı)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 3 Saat", done: false },
+
+      // 21 EKİM ÇARŞAMBA (9 Saat)
+      { id: "car-1", day: "21 Ekim Çarşamba", title: "Trigonometri 11-16. Bölüm (Tüm Videolar + Ödev Testi 11, 12, 13, 14A-B, 15A-B, 16A-B)", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "car-2", day: "21 Ekim Çarşamba", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "car-3", day: "21 Ekim Çarşamba", title: "Kuvvet (1-4. Ders + Karma 1-4 & Günlük Hayat 1-2 - 6 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 1.5 Saat", done: false },
+      { id: "car-4", day: "21 Ekim Çarşamba", title: "Kimyasal Türler Arası Etkileşimler - 1 (1-5. Dersler + Karma 1-2)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 1.5 Saat", done: false },
+      { id: "car-5", day: "21 Ekim Çarşamba", title: "Hücre Tamamı (1-15. Dersler + 6 ÖSYM Testi)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 3 Saat", done: false },
+
+      // 22 EKİM PERŞEMBE (9 Saat)
+      { id: "per-1", day: "22 Ekim Perşembe", title: "Trigonometri 17-21. Bölüm (Teoremler, Grafik, Ters Trigo + Ödev Testi 17A-B, 18A-B, 19A-C, 20, 21)", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "per-2", day: "22 Ekim Perşembe", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "per-3", day: "22 Ekim Perşembe", title: "İş-Güç-Enerji (1-2. Ders + 6 Test) & Isı ve Sıcaklık (1-4. Ders + 6 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 2.5 Saat", done: false },
+      { id: "per-4", day: "22 Ekim Perşembe", title: "Türler Arası Etkileşim Bitiş (6-7. Ders + 4 Test) & Maddenin Halleri (1-5. Ders + 6 Test)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 2 Saat", done: false },
+      { id: "per-5", day: "22 Ekim Perşembe", title: "Sınıflandırma (1-2. Ders + ÖSYM 1) & Canlı Âlemleri Başlangıç (1-5. Ders)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 1.5 Saat", done: false },
+
+      // 23 EKİM CUMA (9 Saat)
+      { id: "cum-1", day: "23 Ekim Cuma", title: "Trigonometri 22-26. Bölüm (Toparlayalım 1, Toplam-Fark, Yarım Açı + Testler 23A-B, 24A-B, 25A-C, 26A-B)", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "cum-2", day: "23 Ekim Cuma", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "cum-3", day: "23 Ekim Cuma", title: "Elektrostatik (1-2. Ders + 4 Test), Elektrik (6 Test) & Manyetizma (1. Ders + 3 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 2 Saat", done: false },
+      { id: "cum-4", day: "23 Ekim Cuma", title: "Doğa ve Kimya (1-2. Ders + 3 Test) & Kimyasal Hesaplamalar (1-7. Ders + 5 Test)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 2.5 Saat", done: false },
+      { id: "cum-5", day: "23 Ekim Cuma", title: "Canlı Âlemleri Bitiş (6-10. Ders + 6 ÖSYM Testi Tamamı)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 1.5 Saat", done: false },
+
+      // 24 EKİM CUMARTESİ (9 Saat)
+      { id: "cmt-1", day: "24 Ekim Cumartesi", title: "Trigonometri 27-35. Bölüm (Yarım Açı Soru, Denklemler, Toparlayalım 2 + Testler 27A-B, 28-34)", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "cmt-2", day: "24 Ekim Cumartesi", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "cmt-3", day: "24 Ekim Cumartesi", title: "Basınç (1-3. Ders + 6 Test), Kaldırma Kuv. (1-2. Ders + 3 Test) & Dalgalar (5 Ders + 11 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 2.5 Saat", done: false },
+      { id: "cmt-4", day: "24 Ekim Cumartesi", title: "Karışımlar (1-6. Ders + Karma 1-3 & ÖSYM 1-2 - 5 Test)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 1.5 Saat", done: false },
+      { id: "cmt-5", day: "24 Ekim Cumartesi", title: "Hücre Bölünmeleri ve Üreme (1-7. Ders + 6 ÖSYM Testi)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 2 Saat", done: false },
+
+      // 25 EKİM PAZAR (9 Saat)
+      { id: "paz-1", day: "25 Ekim Pazar", title: "Trigonometri Mühürleme: ÖSYM Testleri (1-10) + Seçici Sorular Testi", source: "📖 345 Allstar AYT Mat", duration: "⏱️ 2 Saat", done: false },
+      { id: "paz-2", day: "25 Ekim Pazar", title: "Üçgenler Soru Çözümü", source: "📖 345 GGÇK / Eyüp B. SB", duration: "⏱️ 1 Saat", done: false },
+      { id: "paz-3", day: "25 Ekim Pazar", title: "Optik Tamamı: Aydınlanma, Düzlem/Küresel Ayna, Kırılma, Mercekler (13 Ders + 21 Test)", source: "📖 345 Allstar TYT Fizik", duration: "⏱️ 3 Saat", done: false },
+      { id: "paz-4", day: "25 Ekim Pazar", title: "Asit-Baz-Tuz (1-4. Ders + 5 Test) & Kimya Her Yerde (1-4. Ders + 2 Test)", source: "📖 345 Allstar TYT Kimya", duration: "⏱️ 1.5 Saat", done: false },
+      { id: "paz-5", day: "25 Ekim Pazar", title: "Ekosistem Ekolojisi ve Güncel Çevre Sorunları (1-10. Ders + 5 ÖSYM Testi)", source: "📖 345 Allstar TYT Biyoloji", duration: "⏱️ 1.5 Saat", done: false }
     ];
 
-    const INITIAL_CAMP_DATA = {
-      pazartesi: [],
-      salı: [],
-      çarşamba: [],
-      perşembe: [],
-      cuma: [
-        { title: "Grafik Problemleri 4 Test", sub: "345 Sıfır Risk SB", duration: "1.5 saat", done: false },
-        { title: "İkizkenar 1 Test + 1 Yorum", sub: "Eyüp B. Geometri SB", duration: "40 dk", done: false },
-        { title: "Eşkenar 1 Test + 1 Yorum", sub: "Eyüp B. Geometri SB", duration: "40 dk", done: false },
-        { title: "Üçgende Açıortay 4 Test", sub: "345 Allstar GGÇK", duration: "1 set (70 dk)", done: false }
-      ],
-      cumartesi: [
-        { title: "Açıortay Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "75 dk", done: false },
-        { title: "Üçgende Kenarortay 4 Test", sub: "345 Allstar GGÇK", duration: "75 dk", done: false },
-        { title: "Kenarortay Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "75 dk", done: false },
-        { title: "Grafik Problemleri Kalan Testler (Bitiyor)", sub: "345 Sıfır Risk SB", duration: "1.5 saat", done: false },
-        { title: "Açı-Kenar Bağlantıları 3 Test", sub: "345 Allstar GGÇK", duration: "60 dk", done: false }
-      ],
-      pazar: [
-        { title: "Açı-Kenar Klasik & 1 Yorum (3 Test)", sub: "Eyüp B. Geometri SB", duration: "1 saat 30 dk", done: false },
-        { title: "Üçgende Benzerlik 5 Test", sub: "345 Allstar GGÇK", duration: "90 dk", done: false },
-        { title: "Benzerlik Klasik & 1 Yorum (4 Test)", sub: "Eyüp B. Geometri SB", duration: "90 dk", done: false },
-        { title: "Konu Sonlarında Kalan 1-2 Testler (Kitap Bitiyor)", sub: "345 Sıfır Risk SB", duration: "1.5 saat", done: false },
-        { title: "Haftalık Ana Program Toplantısı", sub: "Koçluk Görüşmesi", duration: "Saat 21:00", done: false }
-      ]
-    };
-    const INITIAL_SCHEDULE_META = {
-      cuma: { duration: "4 saat", durationLabel: "Toplam süre" },
-      cumartesi: { duration: "6 saat 15 dakika", durationLabel: "Toplam süre" },
-      pazar: { duration: "5 saat 30 dakika", durationLabel: "Toplam süre" }
-    };
-    // Ekli başlangıç planı yalnızca 12–18 Ekim 2026 haftası için geçerlidir.
-    const isInitialCampWeek = getScheduleDate(0).getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
-    const storedProgramState = localStorage.getItem("furkan_program_state");
-    let appState = storedProgramState === null
-      ? JSON.parse(JSON.stringify(isInitialCampWeek
-        ? INITIAL_CAMP_DATA
-        : Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]))))
-      : JSON.parse(storedProgramState) || {};
-    const storedScheduleMeta = localStorage.getItem("furkan_schedule_meta");
-    let scheduleMeta = storedScheduleMeta === null && storedProgramState === null && isInitialCampWeek
-      ? JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
-      : JSON.parse(storedScheduleMeta || "{}");
-    const TASK_SYNC_QUEUE_KEY = "furkan_task_sync_queue";
-    let taskSyncQueue = JSON.parse(localStorage.getItem(TASK_SYNC_QUEUE_KEY) || "[]");
-    let taskSyncRevision = 0;
-    let isFlushingTaskSyncQueue = false;
-    let taskSyncRetryTimer = null;
-    const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
-    let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
-    let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
-    if (storedProgramState === null && isInitialCampWeek) {
-      appSettings.syncOnLoad = false;
-      localStorage.setItem("furkan_settings", JSON.stringify(appSettings));
-    }
-    let selectedProfilePhoto = "";
-    let profilePhotoProcessing = false;
-    let deferredInstallPrompt = null;
-    let taskPress = null;
-    let ignoreNextTaskClick = false;
-    const shownReminderNotifications = new Set();
+    const STORAGE_KEY = "FURKAN_19_25_EKIM_V1";
+    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || INITIAL_TASKS;
+    const days = [...new Set(INITIAL_TASKS.map(t => t.day))];
+    let activeDay = days[0];
 
-    function saveState() {
-      localStorage.setItem("furkan_program_state", JSON.stringify(appState));
+    function saveLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     }
 
-    function parseTaskNote(rawNote) {
-      const note = String(rawNote || "");
-      const markerIndex = note.lastIndexOf("[KOCLUK_PROGRESS]");
-      if (markerIndex === -1) return note;
-      return note.slice(0, markerIndex).replace(/\n?İlerleme: [^\n]*\n?$/, "").trim();
-    }
+    function renderTabs() {
+      const container = document.getElementById("dayTabs");
+      container.innerHTML = "";
+      days.forEach(day => {
+        const dayTasks = tasks.filter(t => t.day === day);
+        const doneCount = dayTasks.filter(t => t.done).length;
+        const isActive = day === activeDay;
 
-    function serializeTaskNote(task) {
-      return String(task.note || "").replace(/\n?\[KOCLUK_PROGRESS\].*$/s, "").trim();
-    }
-
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "\"": "&quot;",
-        "'": "&#39;"
-      })[character]);
-    }
-
-    function getScheduleDate(dayOffset, referenceDate = new Date()) {
-      const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-      const mondayOffset = (today.getDay() + 6) % 7;
-      today.setDate(today.getDate() - mondayOffset + dayOffset);
-      return today;
-    }
-
-    function formatScheduleDate(date) {
-      return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" }).format(date);
-    }
-
-    function parseDurationMinutes(value) {
-      const normalized = value.trim().toLocaleLowerCase("tr-TR");
-      const hourMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:saat|sa\.?|h)(?=\s|\)|$)/);
-      const minuteMatch = normalized.match(/(\d+(?:[.,]\d+)?)\s*(?:dakika|dak\.?|dk\.?|min(?:ute)?s?)(?=\s|\)|$)/);
-      if (!hourMatch && !minuteMatch) return null;
-
-      const hours = hourMatch ? Number(hourMatch[1].replace(",", ".")) : 0;
-      const minutes = minuteMatch ? Number(minuteMatch[1].replace(",", ".")) : 0;
-      if (
-        !Number.isFinite(hours) ||
-        !Number.isFinite(minutes) ||
-        hours < 0 ||
-        minutes < 0 ||
-        (hourMatch && minuteMatch && minutes >= 60)
-      ) return null;
-      return Math.round(hours * 60 + minutes);
-    }
-
-    function formatDurationMinutes(totalMinutes) {
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      if (hours === 0) return `${minutes} dakika`;
-      if (minutes === 0) return `${hours} saat`;
-      return `${hours} saat ${minutes} dakika`;
-    }
-
-    function updateCurrentWeekLabel(referenceDate = new Date()) {
-      const monday = getScheduleDate(0, referenceDate);
-      const sunday = getScheduleDate(6, referenceDate);
-      const format = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
-      document.getElementById("current-week-label").textContent =
-        `Bu hafta: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
-      const showCampControls = monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
-      document.getElementById("camp-plan-status").classList.toggle("hidden", !showCampControls);
-      document.getElementById("camp-plan-button").classList.toggle("hidden", !showCampControls);
-    }
-
-    function renderProfile() {
-      const name = profile.name || DEFAULT_PROFILE.name;
-      const initial = name.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
-      document.getElementById("header-profile-name").textContent = name;
-      document.getElementById("student-profile-name").textContent = name;
-      setAvatar("header-profile-photo", "header-profile-initial", profile.photo, initial);
-      setAvatar("student-profile-photo", "student-profile-initial", profile.photo, initial);
-    }
-
-    function setAvatar(imageId, initialId, photo, initial) {
-      const image = document.getElementById(imageId);
-      const fallback = document.getElementById(initialId);
-      fallback.textContent = initial;
-      if (photo) {
-        image.src = photo;
-        image.classList.remove("hidden");
-        fallback.classList.add("hidden");
-      } else {
-        image.removeAttribute("src");
-        image.classList.add("hidden");
-        fallback.classList.remove("hidden");
-      }
-    }
-
-    function toggleProfileMenu() {
-      const menu = document.getElementById("profile-menu");
-      const isOpening = menu.classList.contains("hidden");
-      menu.classList.toggle("hidden");
-      document.getElementById("profile-menu-button").setAttribute("aria-expanded", String(isOpening));
-    }
-
-    function closeProfileMenu() {
-      document.getElementById("profile-menu").classList.add("hidden");
-      document.getElementById("profile-menu-button").setAttribute("aria-expanded", "false");
-    }
-
-    function openProfileModal() {
-      closeProfileMenu();
-      selectedProfilePhoto = profile.photo || "";
-      document.getElementById("profile-name-input").value = profile.name || DEFAULT_PROFILE.name;
-      document.getElementById("profile-grade-input").value = profile.grade || "";
-      document.getElementById("profile-track-input").value = profile.track || "";
-      document.getElementById("profile-photo-input").value = "";
-      setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, (profile.name || "F").trim().charAt(0).toLocaleUpperCase("tr-TR"));
-      document.getElementById("profile-modal").classList.remove("hidden");
-    }
-
-    function openSettingsModal() {
-      closeProfileMenu();
-      document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
-      document.getElementById("settings-modal").classList.remove("hidden");
-    }
-
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.add("hidden");
-    }
-
-    function applyAttachedCampPlan() {
-      closeProfileMenu();
-      if (!isInitialCampWeek) return;
-      if (!window.confirm("Bu işlem bu haftanın görevlerini güncel 16–18 Ekim kamp planıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?")) return;
-
-      appState = JSON.parse(JSON.stringify(INITIAL_CAMP_DATA));
-      scheduleMeta = JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META));
-      appSettings.syncOnLoad = false;
-      saveState();
-      localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
-      localStorage.setItem("furkan_settings", JSON.stringify(appSettings));
-      document.getElementById("sync-on-load").checked = false;
-      renderProgram();
-      syncWeeklyPlanToSheet();
-    }
-
-    async function syncWeeklyPlanToSheet() {
-      const status = document.getElementById("sync-status");
-      status.textContent = "Plan siteye kaydedildi; Excel'e gönderiliyor...";
-      status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
-      const rows = DAYS_INFO.flatMap(day => {
-        const dayKey = day.name.toLocaleLowerCase("tr-TR");
-        return (appState[dayKey] || []).map(task => [
-          "3. HAFTALIK PROGRAM",
-          day.name,
-          task.title || "",
-          task.sub || "",
-          task.done ? "Tamamlandı" : (task.status || "Bekliyor"),
-          task.goal || task.duration || "",
-          serializeTaskNote(task)
-        ]);
-      });
-
-      try {
-        await fetch(APPS_SCRIPT_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=UTF-8" },
-          body: JSON.stringify({ action: "replaceWeeklyProgram", rows })
-        });
-        status.textContent = "Excel'e haftalık program güncelleme isteği gönderildi; yanıt doğrulanamıyor.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
-      } catch (error) {
-        console.error("Haftalık program Excel'e gönderilemedi:", error);
-        status.textContent = "Plan siteye kaydedildi ancak Excel'e gönderilemedi.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
-      }
-    }
-
-    function openReminderModal() {
-      closeProfileMenu();
-      document.getElementById("reminder-modal").classList.remove("hidden");
-    }
-
-    function formatCalendarDateTime(date) {
-      const pad = value => String(value).padStart(2, "0");
-      return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}00`;
-    }
-
-    function addCalendarReminder(type) {
-      const now = new Date();
-      const start = new Date(now);
-      let title;
-      let details;
-      let recurrence;
-      if (type === "daily") {
-        start.setHours(22, 30, 0, 0);
-        if (start <= now) start.setDate(start.getDate() + 1);
-        title = "Gün Sonu Süre Fotoğrafı ve Rapor";
-        details = "Çalışma süresi fotoğrafını paylaş ve günün kısa değerlendirmesini yap.";
-        recurrence = "RRULE:FREQ=DAILY";
-      } else {
-        const daysUntilSunday = (7 - start.getDay()) % 7;
-        start.setDate(start.getDate() + daysUntilSunday);
-        start.setHours(21, 0, 0, 0);
-        if (start <= now) start.setDate(start.getDate() + 7);
-        title = "Haftalık Koçluk Program Toplantısı";
-        details = "Haftayı değerlendir ve gelecek haftanın programını planla.";
-        recurrence = "RRULE:FREQ=WEEKLY;BYDAY=SU";
-      }
-
-      const end = new Date(start.getTime() + 15 * 60 * 1000);
-      const calendarUrl = new URL("https://calendar.google.com/calendar/render");
-      calendarUrl.searchParams.set("action", "TEMPLATE");
-      calendarUrl.searchParams.set("text", title);
-      calendarUrl.searchParams.set("details", details);
-      calendarUrl.searchParams.set("dates", `${formatCalendarDateTime(start)}/${formatCalendarDateTime(end)}`);
-      calendarUrl.searchParams.set("recur", recurrence);
-      window.open(calendarUrl.toString(), "_blank", "noopener,noreferrer");
-    }
-
-    async function enableBrowserNotification() {
-      if (!("Notification" in window)) {
-        alert("Bu tarayıcı bildirimleri desteklemiyor. Takvim hatırlatıcısı ekleyebilirsin.");
-        return;
-      }
-
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-          new Notification("Koçluk hatırlatıcıları açıldı", {
-            body: "Günlük rapor ve pazar görüşmesi için uygulama açıkken bildirim alacaksın."
-          });
-        } else {
-          alert("Bildirim izni verilmedi. Hatırlatma için takvime ekleme seçeneğini kullanabilirsin.");
-        }
-      } catch (error) {
-        console.error("Bildirim izni alınamadı:", error);
-        alert("Bildirim izni alınamadı. Hatırlatma için takvime ekleme seçeneğini kullanabilirsin.");
-      }
-    }
-
-    function checkReminderNotifications() {
-      if (!("Notification" in window) || Notification.permission !== "granted") return;
-      const now = new Date();
-      const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-      const reminders = [];
-      if (now.getHours() === 22 && now.getMinutes() === 30) {
-        reminders.push(["daily", "Gün sonu raporu vakti", "Çalışma süresi fotoğrafını paylaş ve gününü değerlendir."]);
-      }
-      if (now.getDay() === 0 && now.getHours() === 21 && now.getMinutes() === 0) {
-        reminders.push(["weekly", "Haftalık program görüşmesi", "Gelecek haftanın programını planlama vakti."]);
-      }
-      reminders.forEach(([type, title, body]) => {
-        const key = `${dateKey}-${type}`;
-        if (shownReminderNotifications.has(key)) return;
-        shownReminderNotifications.add(key);
-        new Notification(title, { body });
+        const btn = document.createElement("button");
+        btn.className = `px-4 py-2 rounded-xl text-xs md:text-sm font-bold border transition ${
+          isActive
+            ? "bg-blue-600 text-white border-blue-500 shadow-md"
+            : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+        }`;
+        btn.innerHTML = `${day} <span class="ml-1 opacity-75">(${doneCount}/${dayTasks.length})</span>`;
+        btn.onclick = () => { activeDay = day; render(); };
+        container.appendChild(btn);
       });
     }
 
-    window.setInterval(checkReminderNotifications, 30000);
+    function renderTasks() {
+      const container = document.getElementById("tasksContainer");
+      container.innerHTML = "";
+      const dayTasks = tasks.filter(t => t.day === activeDay);
 
-    async function installApp() {
-      if (!deferredInstallPrompt) {
-        document.getElementById("ios-install-modal").classList.remove("hidden");
-        return;
-      }
+      dayTasks.forEach(task => {
+        const card = document.createElement("div");
+        card.className = `task-card bg-slate-800/90 border border-slate-700 rounded-xl p-4 flex items-center justify-between gap-4 cursor-pointer hover:border-slate-500 ${task.done ? "done" : ""}`;
+        card.onclick = () => toggleTask(task.id);
 
-      deferredInstallPrompt.prompt();
-      await deferredInstallPrompt.userChoice;
-      deferredInstallPrompt = null;
-      document.getElementById("install-button").classList.add("hidden");
-    }
-
-    window.addEventListener("beforeinstallprompt", event => {
-      event.preventDefault();
-      deferredInstallPrompt = event;
-      document.getElementById("install-button").classList.remove("hidden");
-    });
-
-    window.addEventListener("appinstalled", () => {
-      deferredInstallPrompt = null;
-      document.getElementById("install-button").classList.add("hidden");
-    });
-
-    const isIosDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-    if (isIosDevice && !isStandalone) {
-      const installButton = document.getElementById("install-button");
-      installButton.textContent = "Ana ekrana ekle";
-      installButton.classList.remove("hidden");
-    }
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js")
-        .catch(error => console.error("Service worker kaydedilemedi:", error));
-    }
-
-    function previewProfilePhoto(input) {
-      const file = input.files[0];
-      if (!file) return;
-      if (!file.type.startsWith("image/")) {
-        alert("Lütfen bir fotoğraf dosyası seç.");
-        input.value = "";
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Fotoğraf en fazla 2 MB olabilir.");
-        input.value = "";
-        return;
-      }
-
-      profilePhotoProcessing = true;
-      const saveButton = document.getElementById("save-profile-button");
-      saveButton.disabled = true;
-      saveButton.textContent = "Fotoğraf hazırlanıyor...";
-      const reader = new FileReader();
-      reader.onload = () => {
-        const image = new Image();
-        image.onload = () => {
-          try {
-            const canvas = document.createElement("canvas");
-            const size = 384;
-            const cropSize = Math.min(image.naturalWidth, image.naturalHeight);
-            const cropX = (image.naturalWidth - cropSize) / 2;
-            const cropY = (image.naturalHeight - cropSize) / 2;
-            canvas.width = size;
-            canvas.height = size;
-            const context = canvas.getContext("2d");
-            if (!context) throw new Error("Fotoğraf düzenleyici başlatılamadı.");
-            context.fillStyle = "#ffffff";
-            context.fillRect(0, 0, size, size);
-            context.drawImage(image, cropX, cropY, cropSize, cropSize, 0, 0, size, size);
-            selectedProfilePhoto = canvas.toDataURL("image/jpeg", 0.82);
-            const initial = document.getElementById("profile-name-input").value.trim().charAt(0).toLocaleUpperCase("tr-TR") || "F";
-            setAvatar("profile-photo-preview", "profile-photo-initial", selectedProfilePhoto, initial);
-          } catch (error) {
-            console.error("Profil fotoğrafı hazırlanamadı:", error);
-            alert("Fotoğraf hazırlanamadı. Lütfen başka bir fotoğraf seç.");
-            input.value = "";
-          } finally {
-            profilePhotoProcessing = false;
-            saveButton.disabled = false;
-            saveButton.textContent = "Kaydet";
-          }
-        };
-        image.onerror = () => {
-          alert("Fotoğraf açılamadı. Lütfen başka bir fotoğraf seç.");
-          input.value = "";
-          profilePhotoProcessing = false;
-          saveButton.disabled = false;
-          saveButton.textContent = "Kaydet";
-        };
-        image.src = reader.result;
-      };
-      reader.onerror = () => {
-        alert("Fotoğraf okunamadı. Lütfen tekrar dene.");
-        input.value = "";
-        profilePhotoProcessing = false;
-        saveButton.disabled = false;
-        saveButton.textContent = "Kaydet";
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function saveProfile(event) {
-      event.preventDefault();
-      if (profilePhotoProcessing) return;
-      const updatedProfile = {
-        name: document.getElementById("profile-name-input").value.trim() || DEFAULT_PROFILE.name,
-        photo: selectedProfilePhoto,
-        grade: document.getElementById("profile-grade-input").value,
-        track: document.getElementById("profile-track-input").value
-      };
-      try {
-        localStorage.setItem("furkan_profile", JSON.stringify(updatedProfile));
-      } catch (error) {
-        console.error("Profil kaydedilemedi:", error);
-        alert("Profil kaydedilemedi. Cihazınızda depolama alanı yetersiz olabilir.");
-        return;
-      }
-      profile = updatedProfile;
-      renderProfile();
-      closeModal("profile-modal");
-    }
-
-    function updateSyncSetting(enabled) {
-      appSettings.syncOnLoad = enabled;
-      localStorage.setItem("furkan_settings", JSON.stringify(appSettings));
-      if (enabled) fetchSheetData();
-    }
-
-    document.addEventListener("click", event => {
-      if (!document.getElementById("profile-menu-wrap").contains(event.target)) closeProfileMenu();
-    });
-
-    document.addEventListener("keydown", event => {
-      if (event.key === "Escape") {
-        closeProfileMenu();
-        closeModal("ios-install-modal");
-        closeModal("profile-modal");
-        closeModal("settings-modal");
-        closeModal("reminder-modal");
-      }
-    });
-
-    function updateWeeklyProgress() {
-      const tasks = DAYS_INFO.flatMap(day => appState[day.name.toLocaleLowerCase("tr-TR")] || []);
-      const completedCount = tasks.filter(task => task.done).length;
-      const percent = tasks.length ? Math.round(completedCount / tasks.length * 100) : 0;
-      document.getElementById("weekly-progress-label").textContent = tasks.length
-        ? `Haftalık ilerleme: ${completedCount}/${tasks.length} görev (%${percent})`
-        : "Haftalık ilerleme: görev yok";
-      document.getElementById("weekly-progress-bar").style.width = `${percent}%`;
-      document.getElementById("weekly-progress").setAttribute("aria-valuenow", String(percent));
-    }
-
-    function renderProgram() {
-      const grid = document.getElementById("kanban-grid");
-      grid.innerHTML = "";
-      updateCurrentWeekLabel();
-      updateWeeklyProgress();
-      const today = new Date();
-
-      DAYS_INFO.forEach(d => {
-        const key = d.name.toLocaleLowerCase("tr-TR");
-        const date = getScheduleDate(d.offset, today);
-        const isToday = date.toDateString() === today.toDateString();
-        const col = document.createElement("div");
-        col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
-        col.dataset.dayKey = key;
-
-        let html = `
-          <div class="text-center pb-3 mb-2 border-b border-slate-100">
-            <div class="text-xs ${isToday ? "font-bold text-indigo-600" : "text-slate-400"}">${d.name}${isToday ? " · Bugün" : ""}</div>
-            <div class="text-lg font-bold text-slate-800 my-0.5">${formatScheduleDate(date)}</div>
-            <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
-              ? `${escapeHtml(scheduleMeta[key].durationLabel || "Toplam süre")}: ${escapeHtml(scheduleMeta[key].duration)}`
-              : "Süre belirtilmedi"}</div>
-          </div>
-
-          <!-- + Görev Ekle Butonu -->
-          <button onclick="addTask('${d.name}')" class="w-full py-1.5 mb-3 text-center text-xs font-semibold text-indigo-600 hover:bg-indigo-50/60 rounded transition">
-            + Görev Ekle
-          </button>
-
-          <!-- Görev Kartları -->
-          <div class="space-y-2.5 flex-1">
-        `;
-
-        const tasks = appState[key] || [];
-
-        if (tasks.length === 0) {
-          html += `<div class="py-4 text-center text-[11px] text-slate-400">Görev yok</div>`;
-        }
-
-        tasks.forEach((t, tIdx) => {
-          const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
-          html += `
-            <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup sürükle">
-              <div class="flex items-start justify-between">
-                <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(t.title)}</span>
-                <button type="button" data-task-drag-handle onclick="event.stopPropagation()" aria-label="Görevi taşımak için basılı tut" title="Görevi taşımak için basılı tut" class="task-drag-handle -mr-1 -mt-1 px-1 text-slate-400 hover:text-indigo-600 font-bold text-base leading-none">⠿</button>
+        card.innerHTML = `
+          <div class="flex items-start gap-3.5">
+            <input type="checkbox" ${task.done ? "checked" : ""} class="mt-1 w-5 h-5 accent-emerald-500 rounded cursor-pointer pointer-events-none" />
+            <div>
+              <h3 class="font-bold text-sm md:text-base ${task.done ? "line-through text-slate-400" : "text-slate-100"}">${task.title}</h3>
+              <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs">
+                <span class="px-2.5 py-0.5 rounded-md bg-slate-700/80 text-blue-300 font-medium">${task.source}</span>
+                <span class="px-2.5 py-0.5 rounded-md bg-slate-700/80 text-amber-300 font-medium">${task.duration}</span>
               </div>
-              ${t.sub ? `<div class="mt-1 flex items-start gap-1 text-[11px] font-medium leading-tight text-slate-500"><svg class="mt-px h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg><span>${escapeHtml(t.sub)}</span></div>` : ""}
-              ${t.duration ? `<div class="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-600"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>${escapeHtml(t.duration)}</span></div>` : ""}
-              ${t.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(t.goal)}</div>` : ""}
-              ${t.note ? `<div class="text-[10px] text-slate-500 mt-1">${escapeHtml(t.note)}</div>` : ""}
-              <div class="text-[10px] text-slate-400 mt-1">Durum: ${escapeHtml(status)}</div>
             </div>
-          `;
-        });
-
-        html += `</div>`;
-        col.innerHTML = html;
-        grid.appendChild(col);
+          </div>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-lg ${task.done ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-700 text-slate-400"}">
+            ${task.done ? "Tamamlandı" : "Bekliyor"}
+          </span>
+        `;
+        container.appendChild(card);
       });
     }
 
-    function getTaskDropPosition(x, y) {
-      const hovered = document.elementFromPoint(x, y);
-      const column = hovered?.closest("[data-day-key]");
-      if (!column) return null;
-
-      const dayKey = column.dataset.dayKey;
-      const cards = Array.from(column.querySelectorAll("[data-task-index]"))
-        .filter(taskCard => taskCard !== taskPress?.card);
-      const index = cards.findIndex(card => {
-        const rect = card.getBoundingClientRect();
-        const transform = getComputedStyle(card).transform;
-        const animatedOffsetY = transform === "none" ? 0 : new DOMMatrixReadOnly(transform).m42;
-        const layoutTop = rect.top - animatedOffsetY;
-        return y < layoutTop + card.offsetHeight / 2;
-      });
-      return { dayKey, index: index === -1 ? cards.length : index };
+    function renderProgress() {
+      const total = tasks.length;
+      const done = tasks.filter(t => t.done).length;
+      const pct = Math.round((done / total) * 100);
+      document.getElementById("progressText").textContent = `${done} / ${total} (%${pct})`;
+      document.getElementById("progressBar").style.width = `${pct}%`;
     }
 
-    function moveTaskPlaceholder(press, position) {
-      if (!press.placeholder?.isConnected || position.dayKey !== press.dayKey) return;
-
-      const cards = Array.from(press.placeholder.parentElement.querySelectorAll("[data-task-index]"))
-        .filter(card => card !== press.card);
-      const reference = cards[Math.min(position.index, cards.length)] || null;
-      if (press.placeholder.nextElementSibling === reference) return;
-
-      const previousRects = new Map(cards.map(card => [card, card.getBoundingClientRect()]));
-      cards.forEach(card => card.getAnimations().forEach(animation => animation.cancel()));
-      if (reference) press.placeholder.parentElement.insertBefore(press.placeholder, reference);
-      else press.placeholder.parentElement.appendChild(press.placeholder);
-
-      cards.forEach(card => {
-        const previous = previousRects.get(card);
-        const current = card.getBoundingClientRect();
-        const offsetY = previous.top - current.top;
-        if (offsetY && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          const duration = Math.min(300, 190 + Math.abs(offsetY) * 0.25);
-          card.animate(
-            [
-              { transform: `translateY(${offsetY}px)` },
-              { transform: "translateY(0)" },
-            ],
-            { duration, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
-          );
-        }
-      });
+    function render() {
+      renderTabs();
+      renderTasks();
+      renderProgress();
     }
 
-    function updateTaskDropTarget(x, y) {
-      document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
-      const position = getTaskDropPosition(x, y);
-      taskPress.dropPosition = position;
-      if (position) {
-        document.querySelector(`[data-day-key="${position.dayKey}"]`)?.classList.add("day-drop-target");
-        moveTaskPlaceholder(taskPress, position);
-      }
-    }
-
-    function startTaskPress(event) {
-      const card = event.target.closest("[data-task-index]");
-      const handle = event.target.closest("[data-task-drag-handle]");
-      if (
-        !card ||
-        taskPress ||
-        (event.target.closest("button") && !handle) ||
-        (event.pointerType === "mouse" ? event.button !== 0 : !handle)
-      ) return;
-
-      taskPress = {
-        pointerId: event.pointerId,
-        card,
-        dayKey: card.closest("[data-day-key]").dataset.dayKey,
-        taskIndex: Number(card.dataset.taskIndex),
-        startX: event.clientX,
-        startY: event.clientY,
-        x: event.clientX,
-        y: event.clientY,
-        offsetX: event.clientX - card.getBoundingClientRect().left,
-        offsetY: event.clientY - card.getBoundingClientRect().top,
-        dragging: false,
-        moved: false,
-      };
-      card.setPointerCapture(event.pointerId);
-    }
-
-    function beginTaskDrag(press) {
-      press.dragging = true;
-      press.moved = true;
-      const rect = press.card.getBoundingClientRect();
-      press.originalStyle = press.card.getAttribute("style");
-      press.placeholder = press.card.cloneNode(true);
-      press.placeholder.classList.add("task-drag-placeholder");
-      press.placeholder.removeAttribute("onclick");
-      press.placeholder.removeAttribute("data-task-index");
-      press.placeholder.style.width = `${rect.width}px`;
-      press.placeholder.style.height = `${rect.height}px`;
-      press.card.parentNode.insertBefore(press.placeholder, press.card);
-      press.card.classList.add("task-dragging");
-      Object.assign(press.card.style, {
-        position: "fixed",
-        left: "0",
-        top: "0",
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
-        margin: "0",
-        zIndex: "1000",
-        pointerEvents: "none",
-        transition: "none",
-        willChange: "transform",
-        boxSizing: "border-box",
-        boxShadow: "0 12px 28px rgba(15, 23, 42, 0.25)",
-      });
-    }
-
-    function moveDraggedTaskCard(press) {
-      press.card.style.transform = `translate3d(${press.x - press.offsetX}px, ${press.y - press.offsetY}px, 0)`;
-    }
-
-    function moveTaskPress(event) {
-      if (!taskPress || taskPress.pointerId !== event.pointerId) return;
-
-      taskPress.x = event.clientX;
-      taskPress.y = event.clientY;
-      if (!taskPress.dragging) {
-        if (Math.hypot(event.clientX - taskPress.startX, event.clientY - taskPress.startY) <= 6) return;
-        beginTaskDrag(taskPress);
-      }
-
-      event.preventDefault();
-      moveDraggedTaskCard(taskPress);
-      updateTaskDropTarget(event.clientX, event.clientY);
-    }
-
-    function endTaskPress(event) {
-      if (!taskPress || taskPress.pointerId !== event.pointerId) return;
-
-      const press = taskPress;
-      const position = press.dragging && event.type !== "pointercancel"
-        ? getTaskDropPosition(event.clientX, event.clientY)
-        : null;
-      taskPress = null;
-      press.card.classList.remove("task-dragging");
-      if (!position && press.placeholder?.isConnected) {
-        press.card.parentNode.insertBefore(press.placeholder, press.card);
-      }
-      if (press.placeholder?.isConnected) press.placeholder.replaceWith(press.card);
-      if (press.originalStyle === null) press.card.removeAttribute("style");
-      else if (press.originalStyle !== undefined) press.card.setAttribute("style", press.originalStyle);
-      document.querySelectorAll(".day-drop-target").forEach(column => column.classList.remove("day-drop-target"));
-      if (!press.dragging) return;
-
-      ignoreNextTaskClick = true;
-      window.setTimeout(() => { ignoreNextTaskClick = false; }, 0);
-      if (!press.moved || !position) return;
-
-      const sourceTasks = appState[press.dayKey];
-      if (!sourceTasks || !sourceTasks[press.taskIndex]) return;
-      const [task] = sourceTasks.splice(press.taskIndex, 1);
-      if (!appState[position.dayKey]) appState[position.dayKey] = [];
-      const insertIndex = Math.max(0, Math.min(position.index, appState[position.dayKey].length));
-      appState[position.dayKey].splice(insertIndex, 0, task);
-      saveState();
-      renderProgram();
-    }
-
-    document.addEventListener("pointerdown", startTaskPress);
-    document.addEventListener("pointermove", moveTaskPress, { passive: false });
-    document.addEventListener("pointerup", endTaskPress);
-    document.addEventListener("pointercancel", endTaskPress);
-    document.addEventListener("contextmenu", event => {
-      if (event.target.closest("[data-task-index]")) event.preventDefault();
-    });
-
-    function toggleTask(dayKey, tIdx) {
-      if (ignoreNextTaskClick) {
-        ignoreNextTaskClick = false;
-        return;
-      }
-      const task = appState[dayKey][tIdx];
+    async function toggleTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
       task.done = !task.done;
-      task.status = task.done ? "Tamamlandı" : "Bekliyor";
-      saveState();
-      renderProgram();
-      syncTaskStatusToSheet(dayKey, task);
-    }
+      saveLocal();
+      render();
 
-    function getTaskSyncId(dayKey, task) {
-      return JSON.stringify([dayKey, task.title, task.sub || ""]);
-    }
-
-    function setTaskSyncStatus(message, colorClass) {
-      const status = document.getElementById("sync-status");
-      status.textContent = message;
-      status.className = `block px-4 pb-2 text-xs font-semibold ${colorClass}`;
-    }
-
-    function syncTaskStatusToSheet(dayKey, task) {
-      const update = {
-        id: getTaskSyncId(dayKey, task),
-        day: dayKey,
-        task: task.title,
-        sub: task.sub || "",
-        status: task.done ? "Tamamlandı" : "Bekliyor",
-        updatedAt: Date.now(),
-        revision: ++taskSyncRevision
-      };
-      const existingIndex = taskSyncQueue.findIndex(item => item.id === update.id);
-      if (existingIndex === -1) taskSyncQueue.push(update);
-      else taskSyncQueue[existingIndex] = update;
-
-      try {
-        localStorage.setItem(TASK_SYNC_QUEUE_KEY, JSON.stringify(taskSyncQueue));
-      } catch (error) {
-        console.error("Görev eşitleme kuyruğu kaydedilemedi:", error);
-        setTaskSyncStatus("Görev cihazda güncellendi ancak eşitleme kuyruğa alınamadı.", "text-rose-600");
-        return;
-      }
-
-      setTaskSyncStatus(
-        navigator.onLine
-          ? "Görev güncellendi; Excel'e arka planda gönderiliyor."
-          : "Çevrimdışı; görev bağlantı gelince eşitlenecek.",
-        "text-amber-600"
-      );
-      flushTaskSyncQueue();
-    }
-
-    async function flushTaskSyncQueue() {
-      if (isFlushingTaskSyncQueue || !navigator.onLine || taskSyncQueue.length === 0) return;
-      isFlushingTaskSyncQueue = true;
-
-      try {
-        while (taskSyncQueue.length > 0) {
-          const update = taskSyncQueue[0];
-          await fetch(APPS_SCRIPT_URL, {
+      if (SCRIPT_URL && SCRIPT_URL.startsWith("http")) {
+        try {
+          fetch(SCRIPT_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=UTF-8" },
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
-              action: "updateStatus",
-              day: update.day,
-              task: update.task,
-              sub: update.sub,
-              status: update.status
+              action: "toggle",
+              id: task.id,
+              day: task.day,
+              title: task.title,
+              source: task.source,
+              duration: task.duration,
+              done: task.done
             })
           });
-
-          const currentIndex = taskSyncQueue.findIndex(item => item.id === update.id);
-          if (
-            currentIndex !== -1 &&
-            taskSyncQueue[currentIndex].updatedAt === update.updatedAt &&
-            taskSyncQueue[currentIndex].revision === update.revision
-          ) {
-            taskSyncQueue.splice(currentIndex, 1);
-            localStorage.setItem(TASK_SYNC_QUEUE_KEY, JSON.stringify(taskSyncQueue));
-          }
-        }
-        setTaskSyncStatus("Senkronizasyon isteği gönderildi.", "text-emerald-600");
-      } catch (error) {
-        console.error("Görev durumu Apps Script'e gönderilemedi:", error);
-        setTaskSyncStatus("Bağlantı bekleniyor; görev eşitlemesi sıraya alındı.", "text-amber-600");
-        if (taskSyncRetryTimer === null) {
-          taskSyncRetryTimer = window.setTimeout(() => {
-            taskSyncRetryTimer = null;
-            flushTaskSyncQueue();
-          }, 30000);
-        }
-      } finally {
-        isFlushingTaskSyncQueue = false;
+        } catch (e) {}
       }
     }
 
-    window.addEventListener("online", flushTaskSyncQueue);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") flushTaskSyncQueue();
-    });
-
-    function addTask(dayName) {
-      const key = dayName.toLowerCase();
-      const title = prompt("Ders / Kaynak Adı (Örn: 345 Fizik):");
-      if (!title) return;
-      const sub = prompt("Konu / Detay (Örn: Kuvvet ve Hareket Test 1-2):") || "Çalışma";
-      if (!appState[key]) appState[key] = [];
-      appState[key].push({ title, sub, done: false, status: "Bekliyor" });
-      saveState();
-      renderProgram();
-    }
-
-    function parseCsv(text) {
-      const rows = [];
-      let row = [];
-      let field = "";
-      let inQuotes = false;
-
-      for (let i = 0; i < text.length; i += 1) {
-        const character = text[i];
-        if (inQuotes) {
-          if (character === '"' && text[i + 1] === '"') {
-            field += '"';
-            i += 1;
-          } else if (character === '"') {
-            inQuotes = false;
-          } else {
-            field += character;
-          }
-        } else if (character === '"' && field.length === 0) {
-          inQuotes = true;
-        } else if (character === ",") {
-          row.push(field);
-          field = "";
-        } else if (character === "\n" || character === "\r") {
-          row.push(field);
-          rows.push(row);
-          row = [];
-          field = "";
-          if (character === "\r" && text[i + 1] === "\n") i += 1;
-        } else {
-          field += character;
-        }
-      }
-
-      if (inQuotes) throw new Error("CSV biçimi geçersiz: kapanmamış tırnak.");
-      if (field.length > 0 || row.length > 0) {
-        row.push(field);
-        rows.push(row);
-      }
-      return rows;
-    }
-
-    async function fetchSheetData() {
-      const button = document.getElementById("sync-button");
-      const status = document.getElementById("sync-status");
-      button.disabled = true;
-      status.textContent = "Senkronize ediliyor...";
-      status.className = "text-xs font-semibold text-slate-500";
-
-      try {
-        const csvUrl = new URL(CSV_URL);
-        csvUrl.searchParams.set("_", Date.now().toString());
-        const res = await fetch(csvUrl, { cache: "no-store" });
-        if (!res.ok) throw new Error(`CSV isteği başarısız: ${res.status}`);
-        const text = await res.text();
-        const rows = parseCsv(text);
-        const header = rows.shift() || [];
-        const normalizedHeader = header.map(value => value.replace(/^\uFEFF/, "").trim().toLocaleLowerCase("tr-TR"));
-        if (
-          normalizedHeader[0] !== "bölüm" ||
-          normalizedHeader[1] !== "ders / gün" ||
-          !normalizedHeader[2] ||
-          !normalizedHeader[3] ||
-          !normalizedHeader[4] ||
-          normalizedHeader[5] !== "kalan / hedef soru" ||
-          normalizedHeader[6] !== "notlar & analiz"
-        ) {
-          throw new Error("Google Sheets CSV başlıkları beklenen biçimde değil.");
-        }
-        const durationColumnIndex = normalizedHeader.findIndex(value =>
-          value === "toplam süre" || value === "günlük toplam süre"
-        );
-        const taskDurationColumnIndexes = [
-          normalizedHeader.findIndex(value => /^(?:görev\s*1\s*süre(?:si)?|süre\s*1)$/.test(value)),
-          normalizedHeader.findIndex(value => /^(?:görev\s*2\s*süre(?:si)?|süre\s*2)$/.test(value))
-        ];
-
-        const dayKeys = new Map(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), day.name.toLocaleLowerCase("tr-TR")]));
-        const newTasks = Object.fromEntries(DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []]));
-        const newScheduleMeta = {};
-        const weeklyRows = rows.filter(row =>
-          (row[0] || "").trim().toLocaleLowerCase("tr-TR").includes("haftalık program")
-        );
-        if (weeklyRows.length === 0) throw new Error("Excel’de haftalık program satırları bulunamadı.");
-
-        let importedTaskCount = 0;
-        weeklyRows.forEach(row => {
-          const dayKey = dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"));
-          if (!dayKey) return;
-
-          const title = (row[2] || "").trim();
-          const sub = (row[3] || "").trim();
-          if (!title && !sub) return;
-
-          const dayMeta = newScheduleMeta[dayKey] || {
-            duration: "",
-            durationLabel: "",
-            explicitDuration: "",
-            taskDurationMinutes: 0
-          };
-          const explicitDuration = durationColumnIndex === -1 ? "" : (row[durationColumnIndex] || "").trim();
-          if (explicitDuration) dayMeta.explicitDuration = explicitDuration;
-
-          if (!dayMeta.explicitDuration) {
-            const taskDurations = taskDurationColumnIndexes
-              .map(index => index === -1 ? "" : (row[index] || "").trim())
-              .filter(Boolean);
-            if (taskDurations.length > 0) {
-              const minutes = taskDurations.map(parseDurationMinutes);
-              if (minutes.some(value => value === null)) {
-                throw new Error(`${dayKeys.get((row[1] || "").trim().toLocaleLowerCase("tr-TR"))} görev süresi Excel’de saat/dakika biçiminde değil.`);
-              }
-              dayMeta.taskDurationMinutes += minutes.reduce((sum, value) => sum + value, 0);
-            } else {
-              const goalDuration = parseDurationMinutes((row[5] || "").trim());
-              if (goalDuration !== null) dayMeta.taskDurationMinutes += goalDuration;
-            }
-          }
-          dayMeta.duration = dayMeta.explicitDuration ||
-            (dayMeta.taskDurationMinutes > 0 ? formatDurationMinutes(dayMeta.taskDurationMinutes) : "");
-          dayMeta.durationLabel = dayMeta.explicitDuration ? "Toplam süre" : "Görev süreleri toplamı";
-          newScheduleMeta[dayKey] = dayMeta;
-
-          const parsedNote = parseTaskNote(row[6] || "");
-          newTasks[dayKey].push({
-            title: title || sub,
-            sub: title && sub ? sub : "",
-            status: (row[4] || "").trim() || "Bekliyor",
-            done: /tamam|bitti|completed|done/i.test((row[4] || "").trim()),
-            goal: (row[5] || "").trim(),
-            note: parsedNote
-          });
-          importedTaskCount += 1;
-        });
-
-        if (importedTaskCount === 0) throw new Error("Haftalık programda geçerli görev bulunamadı.");
-
-        taskSyncQueue.forEach(update => {
-          const task = newTasks[update.day]?.find(candidate =>
-            getTaskSyncId(update.day, candidate) === update.id
-          );
-          if (task) {
-            task.status = update.status;
-            task.done = update.status === "Tamamlandı";
-          }
-        });
-
-        const previousState = appState;
-        const previousScheduleMeta = scheduleMeta;
-        appState = newTasks;
-        scheduleMeta = newScheduleMeta;
+    async function pushAllToSheet() {
+      const badge = document.getElementById("syncBadge");
+      badge.textContent = "⏳ E-Tablo Eşitleniyor...";
+      if (SCRIPT_URL && SCRIPT_URL.startsWith("http")) {
         try {
-          renderProgram();
-          saveState();
-          localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
-        } catch (error) {
-          appState = previousState;
-          scheduleMeta = previousScheduleMeta;
-          renderProgram();
-          throw error;
+          await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "syncAll", tasks })
+          });
+          badge.textContent = "● E-Tablo Eşitlendi";
+        } catch (e) {
+          badge.textContent = "● Lokal Kayıt Aktif";
         }
-
-        status.textContent = "Başarıyla senkronize edildi";
-        status.className = "text-xs font-semibold text-emerald-700";
-        return true;
-      } catch (e) {
-        console.error("Senkronizasyon hatası:", e);
-        status.textContent = "Senkronizasyonda hata oldu";
-        status.className = "text-xs font-semibold text-rose-600";
-        return false;
-      } finally {
-        button.disabled = false;
+      } else {
+        badge.textContent = "● Lokal Kayıt Aktif";
       }
     }
 
-    function switchTab(tab) {
-      ['program', 'analiz', 'deneme'].forEach(t => {
-        document.getElementById('view-' + t).classList.add('hidden');
-        document.getElementById('nav-' + t).className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
-      });
-      document.getElementById('view-deneme-sorulari').classList.add('hidden');
-      document.getElementById('view-soru-bankasi').classList.add('hidden');
-      document.getElementById('nav-soru-kumbaram').className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
-      document.getElementById('student-week-bar').classList.toggle('hidden', tab === 'soru-kumbaram');
-      document.getElementById('question-bank-nav').classList.toggle('hidden', tab !== 'soru-kumbaram');
-
-      if (tab === 'soru-kumbaram') {
-        document.getElementById('nav-soru-kumbaram').className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
-        switchQuestionBankTab('deneme-sorulari');
-        return;
-      }
-
-      document.getElementById('view-' + tab).classList.remove('hidden');
-      document.getElementById('nav-' + tab).className = "text-indigo-600 border-b-2 border-indigo-600 pb-3.5 pt-1 font-bold";
-    }
-
-    function switchQuestionBankTab(tab) {
-      ['deneme-sorulari', 'soru-bankasi'].forEach(item => {
-        document.getElementById('view-' + item).classList.toggle('hidden', item !== tab);
-        document.getElementById('nav-' + item).className = item === tab
-          ? "border-b-2 border-indigo-600 pb-2 pt-1 text-indigo-600"
-          : "border-b-2 border-transparent pb-2 pt-1 text-slate-500 transition hover:text-slate-900";
-      });
-    }
-
-    renderProfile();
-    document.getElementById("sync-on-load").checked = appSettings.syncOnLoad;
-    updateCurrentWeekLabel();
-    renderProgram();
-    flushTaskSyncQueue();
-    if (appSettings.syncOnLoad) {
-      const syncProgram = () => fetchSheetData();
-      if ("requestIdleCallback" in window) window.requestIdleCallback(syncProgram, { timeout: 2500 });
-      else window.setTimeout(syncProgram, 0);
+    // İlk açılışta çalıştır ve E-Tabloya başlangıç verisini gönder
+    render();
+    if (!localStorage.getItem(STORAGE_KEY + "_SYNCED")) {
+      pushAllToSheet();
+      localStorage.setItem(STORAGE_KEY + "_SYNCED", "true");
     }
   </script>
 </body>
