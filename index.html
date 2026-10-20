@@ -148,7 +148,7 @@
   </nav>
 
   <!-- ÖĞRENCİ & HAFTA SEÇİM BARI -->
-  <section id="student-week-bar" class="hidden px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
+  <section id="student-week-bar" class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
     <div id="student-week-row" class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-3">
         <div class="w-8 h-8 overflow-hidden rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
@@ -184,43 +184,14 @@
       <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
         ✓ 19–25 Ekim Programı Aktif
       </span>
+      <span id="syncBadge" class="hidden" aria-live="polite"></span>
     </div>
   </section>
 
-  <!-- PROGRAM -->
-  <main id="view-program" class="flex-1 bg-white px-4 py-6 text-slate-800 md:p-8">
-    <div class="mx-auto max-w-5xl space-y-6">
-      <header class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700">19–25 Ekim Kampı (Revize v2)</span>
-            <span id="syncBadge" class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">● E-Tablo Senkron Aktif</span>
-          </div>
-          <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">Furkan — İTÜ Elektrik (İlk 5.000)</h1>
-          <p class="mt-1 text-sm text-slate-500">Salı Maç Günü Kurtarma Revizesi + Çarşamba/Perşembe Akıllı Telafi</p>
-        </div>
-        <div class="flex flex-col items-start gap-2 md:items-end">
-          <div class="md:text-right">
-            <span class="block text-xs text-slate-500">Haftalık İlerleme</span>
-            <span id="progressText" class="text-2xl font-black text-emerald-600">0 / 35 (%0)</span>
-          </div>
-          <button type="button" onclick="pushAllToSheet()" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100">
-            🔄 Tabloyu Şimdi Eşitle
-          </button>
-        </div>
-      </header>
-
-      <div class="h-3 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-        <div id="progressBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
-      </div>
-
-      <div id="dayTabs" class="flex flex-wrap gap-2" role="tablist" aria-label="Gün seç"></div>
-      <div id="tasksContainer" class="space-y-3" role="tabpanel"></div>
-
-      <footer class="flex flex-col items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 sm:flex-row">
-        <div>⏰ <strong>Uyku Kuralı:</strong> 00:30 Yatış – 07:30/08:00 Kalkış (Askeri Uyku &amp; 4-7-8 Nefes)</div>
-        <div>📅 <strong>Bu Gece 00:00:</strong> Salı Kurtarma Operasyonu Süre Raporu</div>
-      </footer>
+  <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
+  <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
+    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px] sm:min-w-[1260px] lg:min-w-0">
+      <!-- JS ile doldurulur -->
     </div>
   </main>
 
@@ -557,7 +528,6 @@
     let taskSyncRetryTimer = null;
     let viewedScheduleWeekKey = currentScheduleWeekKey;
     let viewedWeekOffset = 0;
-    let activeProgramDay = "salı";
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
@@ -1087,60 +1057,57 @@
       updateWeeklyProgress();
       const [year, month, day] = viewedScheduleWeekKey.split("-").map(Number);
       const weekStart = new Date(year, month - 1, day);
-      const tabContainer = document.getElementById("dayTabs");
-      tabContainer.innerHTML = "";
+      const grid = document.getElementById("kanban-grid");
+      grid.innerHTML = "";
+      const today = new Date();
 
       DAYS_INFO.forEach(dayInfo => {
-        const dayKey = dayInfo.name.toLocaleLowerCase("tr-TR");
+        const key = dayInfo.name.toLocaleLowerCase("tr-TR");
         const date = getScheduleDate(dayInfo.offset, weekStart);
-        const dayTasks = appState[dayKey] || [];
-        const isActive = dayKey === activeProgramDay;
-        const tab = document.createElement("button");
-        tab.type = "button";
-        tab.className = `rounded-xl border px-4 py-2 text-xs font-bold transition md:text-sm ${
-          isActive
-            ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
-            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-        }`;
-        tab.setAttribute("role", "tab");
-        tab.setAttribute("aria-selected", String(isActive));
-        tab.textContent = `${formatScheduleDate(date)} ${dayInfo.name} (${dayTasks.filter(task => task.done).length}/${dayTasks.length})`;
-        tab.addEventListener("click", () => {
-          activeProgramDay = dayKey;
-          renderProgram();
-        });
-        tabContainer.appendChild(tab);
-      });
+        const isToday = date.toDateString() === today.toDateString();
+        const column = document.createElement("div");
+        column.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
+        column.dataset.dayKey = key;
 
-      const activeDayTasks = appState[activeProgramDay] || [];
-      const taskContainer = document.getElementById("tasksContainer");
-      taskContainer.innerHTML = "";
-      taskContainer.setAttribute("aria-label", `${DAYS_INFO.find(day => day.name.toLocaleLowerCase("tr-TR") === activeProgramDay)?.name || ""} görevleri`);
-
-      activeDayTasks.forEach((task, taskIndex) => {
-        const card = document.createElement("button");
-        card.type = "button";
-        card.className = `flex w-full items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow ${
-          task.done ? "border-emerald-200 bg-emerald-50/70 opacity-80" : ""
-        }`;
-        card.setAttribute("aria-pressed", String(Boolean(task.done)));
-        card.addEventListener("click", () => toggleTask(activeProgramDay, taskIndex));
-        card.innerHTML = `
-          <div class="flex min-w-0 items-start gap-3.5">
-            <span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-300 text-xs text-emerald-600 ${task.done ? "border-emerald-500 bg-emerald-100" : ""}" aria-hidden="true">${task.done ? "✓" : ""}</span>
-            <div class="min-w-0">
-              <h3 class="text-sm font-bold md:text-base ${task.done ? "text-slate-500 line-through" : "text-slate-900"}">${escapeHtml(task.title)}</h3>
-              <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
-                ${task.sub ? `<span class="rounded-md bg-indigo-50 px-2.5 py-0.5 font-medium text-indigo-700">${escapeHtml(task.sub)}</span>` : ""}
-                ${task.duration ? `<span class="rounded-md bg-amber-50 px-2.5 py-0.5 font-medium text-amber-700">${escapeHtml(task.duration)}</span>` : ""}
-              </div>
-            </div>
+        let html = `
+          <div class="text-center pb-3 mb-2 border-b border-slate-100">
+            <div class="text-xs ${isToday ? "font-bold text-indigo-600" : "text-slate-400"}">${dayInfo.name}${isToday ? " · Bugün" : ""}</div>
+            <div class="text-lg font-bold text-slate-800 my-0.5">${formatScheduleDate(date)}</div>
+            <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
+              ? `${escapeHtml(scheduleMeta[key].durationLabel || "Toplam süre")}: ${escapeHtml(scheduleMeta[key].duration)}`
+              : "Süre belirtilmedi"}</div>
           </div>
-          <span class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold ${
-            task.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-          }">${task.done ? "Tamamlandı" : "Bekliyor"}</span>
+          <button onclick="addTask('${dayInfo.name}')" class="w-full py-1.5 mb-3 text-center text-xs font-semibold text-indigo-600 hover:bg-indigo-50/60 rounded transition">
+            + Görev Ekle
+          </button>
+          <div class="space-y-2.5 flex-1">
         `;
-        taskContainer.appendChild(card);
+
+        const tasks = appState[key] || [];
+        if (tasks.length === 0) {
+          html += `<div class="py-4 text-center text-[11px] text-slate-400">Görev yok</div>`;
+        }
+
+        tasks.forEach((task, taskIndex) => {
+          const status = task.done ? "Tamamlandı" : (task.status || "Bekliyor");
+          html += `
+            <div data-task-index="${taskIndex}" onclick="toggleTask('${key}', ${taskIndex})" class="baykus-card ${task.done ? "completed" : ""}" title="Taşımak için basılı tutup sürükle">
+              <div class="flex items-start justify-between">
+                <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(task.title)}</span>
+                <button type="button" data-task-drag-handle onclick="event.stopPropagation()" aria-label="Görevi taşımak için basılı tut" title="Görevi taşımak için basılı tut" class="task-drag-handle -mr-1 -mt-1 px-1 text-slate-400 hover:text-indigo-600 font-bold text-base leading-none">⠿</button>
+              </div>
+              ${task.sub ? `<div class="mt-1 flex items-start gap-1 text-[11px] font-medium leading-tight text-slate-500"><svg class="mt-px h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg><span>${escapeHtml(task.sub)}</span></div>` : ""}
+              ${task.duration ? `<div class="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-600"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>${escapeHtml(task.duration)}</span></div>` : ""}
+              ${task.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(task.goal)}</div>` : ""}
+              ${task.note ? `<div class="text-[10px] text-slate-500 mt-1">${escapeHtml(task.note)}</div>` : ""}
+              <div class="text-[10px] text-slate-400 mt-1">Durum: ${escapeHtml(status)}</div>
+            </div>
+          `;
+        });
+
+        html += `</div>`;
+        column.innerHTML = html;
+        grid.appendChild(column);
       });
     }
 
@@ -1645,7 +1612,7 @@
       document.getElementById('view-deneme-sorulari').classList.add('hidden');
       document.getElementById('view-soru-bankasi').classList.add('hidden');
       document.getElementById('nav-soru-kumbaram').className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
-      document.getElementById('student-week-bar').classList.toggle('hidden', tab === 'soru-kumbaram' || tab === 'program');
+      document.getElementById('student-week-bar').classList.toggle('hidden', tab === 'soru-kumbaram');
       document.getElementById('question-bank-nav').classList.toggle('hidden', tab !== 'soru-kumbaram');
 
       if (tab === 'soru-kumbaram') {
