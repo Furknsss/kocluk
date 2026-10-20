@@ -389,6 +389,7 @@
       pazar: { duration: "5 saat 30 dakika", durationLabel: "Toplam süre" }
     };
     const PROVIDED_PROGRAM_WEEK_KEY = "2026-10-19";
+    const FOLLOWING_WEEK_PROGRAM_KEY = "2026-10-26";
     const PROVIDED_WEEKLY_PROGRAM = {
       pazartesi: [
         ["Trigonometri 1-5. Bölüm (Tüm Videolar + Ödev Testi 1, 2, Birim Çember Özel, 3, 4, 5)", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
@@ -440,6 +441,22 @@
         ["Ekosistem Ekolojisi ve Güncel Çevre Sorunları (1-10. Ders + 5 ÖSYM Testi)", "📖 345 Allstar TYT Biyoloji", "⏱️ 1.5 Saat"]
       ]
     };
+    const FOLLOWING_WEEK_PROVIDED_PROGRAM = {
+      pazartesi: [
+        ["Trigonometri 33-35. Bölüm (Test 33, 34, Toparlayalım 2) + ÖSYM Testleri 1-5", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Optik 1: Aydınlanma, Düzlem Ayna ve Küresel Aynalar (7 Ders + 11 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 2.5 Saat"],
+        ["Asitler, Bazlar ve Tuzlar (1-4. Ders + 5 Test)", "📖 345 Allstar TYT Kimya", "⏱️ 1.5 Saat"],
+        ["Ekosistem Ekolojisi ve Güncel Çevre Sorunları (1-10. Ders + 5 ÖSYM Testi)", "📖 345 Allstar TYT Biyoloji", "⏱️ 1.5 Saat"]
+      ],
+      salı: [
+        ["Trigonometri ÖSYM Testleri 6-10 + Seçici Sorular Testi", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Optik 2: Kırılma ve Mercekler (6 Ders + 10 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 2 Saat"],
+        ["Kimya Her Yerde (1-4. Ders + 2 Test)", "📖 345 Allstar TYT Kimya", "⏱️ 1 Saat"],
+        ["TYT Fen Genel Tarama (2 Adet Branş Denemesi)", "📖 345 / 3D TYT Fen Deneme", "⏱️ 1.5 Saat"]
+      ]
+    };
     const PROVIDED_PROGRAM_DATA = Object.fromEntries(Object.entries(PROVIDED_WEEKLY_PROGRAM).map(([day, tasks]) => [
       day,
       tasks.map(([title, sub, duration]) => ({ title, sub, duration, status: "Bekliyor", done: false }))
@@ -448,6 +465,14 @@
       day.name.toLocaleLowerCase("tr-TR"),
       { duration: day.name === "Salı" ? "5 saat 25 dakika" : "9 saat", durationLabel: "Toplam süre" }
     ]));
+    const FOLLOWING_WEEK_PROGRAM_DATA = Object.fromEntries(Object.entries(FOLLOWING_WEEK_PROVIDED_PROGRAM).map(([day, tasks]) => [
+      day,
+      tasks.map(([title, sub, duration]) => ({ title, sub, duration, status: "Bekliyor", done: false }))
+    ]));
+    const FOLLOWING_WEEK_SCHEDULE_META = {
+      pazartesi: { duration: "8 saat 30 dakika", durationLabel: "Toplam süre" },
+      salı: { duration: "7 saat 30 dakika", durationLabel: "Toplam süre" }
+    };
     // Ekli başlangıç planı yalnızca 12–18 Ekim 2026 haftası için geçerlidir.
     const isInitialCampWeek = getScheduleDate(0).getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
     const currentScheduleWeekKey = getScheduleWeekKey();
@@ -473,18 +498,30 @@
       DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []])
     );
     if (!programWeeks[currentScheduleWeekKey]) {
+      const defaultProgram = getDefaultWeekProgram(currentScheduleWeekKey);
+      const defaultScheduleMeta = getDefaultWeekScheduleMeta(currentScheduleWeekKey);
       programWeeks[currentScheduleWeekKey] = {
-        program: JSON.parse(JSON.stringify(isInitialCampWeek
-          ? INITIAL_CAMP_DATA
-          : isProvidedProgramWeek
-            ? PROVIDED_PROGRAM_DATA
-            : emptyWeekProgram())),
-        scheduleMeta: JSON.parse(JSON.stringify(isInitialCampWeek
-          ? INITIAL_SCHEDULE_META
-          : isProvidedProgramWeek
-            ? PROVIDED_PROGRAM_SCHEDULE_META
-            : {}))
+        program: JSON.parse(JSON.stringify(isInitialCampWeek ? INITIAL_CAMP_DATA : defaultProgram)),
+        scheduleMeta: JSON.parse(JSON.stringify(isInitialCampWeek ? INITIAL_SCHEDULE_META : defaultScheduleMeta))
       };
+    }
+    const FOLLOWING_WEEK_PROGRAM_REVISION_KEY = "furkan_program_revision_2026-10-26";
+    if (
+      programWeeks[FOLLOWING_WEEK_PROGRAM_KEY] &&
+      localStorage.getItem(FOLLOWING_WEEK_PROGRAM_REVISION_KEY) !== "1"
+    ) {
+      const followingWeek = programWeeks[FOLLOWING_WEEK_PROGRAM_KEY];
+      followingWeek.program = followingWeek.program || emptyWeekProgram();
+      followingWeek.scheduleMeta = followingWeek.scheduleMeta || {};
+      ["pazartesi", "salı"].forEach(day => {
+        if (!Array.isArray(followingWeek.program[day]) || followingWeek.program[day].length === 0) {
+          followingWeek.program[day] = JSON.parse(JSON.stringify(FOLLOWING_WEEK_PROGRAM_DATA[day]));
+        }
+        if (!followingWeek.scheduleMeta[day]) {
+          followingWeek.scheduleMeta[day] = JSON.parse(JSON.stringify(FOLLOWING_WEEK_SCHEDULE_META[day]));
+        }
+      });
+      localStorage.setItem(FOLLOWING_WEEK_PROGRAM_REVISION_KEY, "1");
     }
     const PROVIDED_PROGRAM_REVISION_KEY = "furkan_program_revision_2026-10-19";
     if (
@@ -566,9 +603,11 @@
       viewedScheduleWeekKey = getScheduleWeekKey(monday);
 
       if (!programWeeks[viewedScheduleWeekKey]) {
+        const defaultProgram = getDefaultWeekProgram(viewedScheduleWeekKey);
+        const defaultScheduleMeta = getDefaultWeekScheduleMeta(viewedScheduleWeekKey);
         programWeeks[viewedScheduleWeekKey] = {
-          program: emptyWeekProgram(),
-          scheduleMeta: {}
+          program: JSON.parse(JSON.stringify(defaultProgram)),
+          scheduleMeta: JSON.parse(JSON.stringify(defaultScheduleMeta))
         };
         localStorage.setItem(PROGRAM_WEEKS_KEY, JSON.stringify(programWeeks));
       }
@@ -613,6 +652,18 @@
       const month = String(monday.getMonth() + 1).padStart(2, "0");
       const day = String(monday.getDate()).padStart(2, "0");
       return `${monday.getFullYear()}-${month}-${day}`;
+    }
+
+    function getDefaultWeekProgram(weekKey) {
+      if (weekKey === PROVIDED_PROGRAM_WEEK_KEY) return JSON.parse(JSON.stringify(PROVIDED_PROGRAM_DATA));
+      if (weekKey === FOLLOWING_WEEK_PROGRAM_KEY) return JSON.parse(JSON.stringify(FOLLOWING_WEEK_PROGRAM_DATA));
+      return emptyWeekProgram();
+    }
+
+    function getDefaultWeekScheduleMeta(weekKey) {
+      if (weekKey === PROVIDED_PROGRAM_WEEK_KEY) return JSON.parse(JSON.stringify(PROVIDED_PROGRAM_SCHEDULE_META));
+      if (weekKey === FOLLOWING_WEEK_PROGRAM_KEY) return JSON.parse(JSON.stringify(FOLLOWING_WEEK_SCHEDULE_META));
+      return {};
     }
 
     function formatScheduleDate(date) {
