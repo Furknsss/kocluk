@@ -91,7 +91,6 @@
       #student-week-row { align-items: flex-start; gap: 12px; flex-direction: column; }
       #sync-controls { width: 100%; flex-wrap: wrap; }
       #view-program { padding-left: 12px; padding-right: 12px; }
-      #kanban-grid { grid-template-columns: repeat(7, minmax(82vw, 1fr)); }
       #view-analiz, #view-deneme { padding: 20px 16px; }
     }
   </style>
@@ -149,7 +148,7 @@
   </nav>
 
   <!-- ÖĞRENCİ & HAFTA SEÇİM BARI -->
-  <section id="student-week-bar" class="px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
+  <section id="student-week-bar" class="hidden px-8 pt-4 pb-3 border-b border-slate-100 bg-white">
     <div id="student-week-row" class="flex items-center justify-between mb-3">
       <div class="flex items-center space-x-3">
         <div class="w-8 h-8 overflow-hidden rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
@@ -188,10 +187,40 @@
     </div>
   </section>
 
-  <!-- PROGRAM (KANBAN GÖRÜNÜMÜ) -->
-  <main id="view-program" class="flex-1 px-4 py-2 overflow-x-auto">
-    <div id="kanban-grid" class="grid grid-cols-7 min-w-[1260px] sm:min-w-[1260px] lg:min-w-0">
-      <!-- JS ile doldurulur -->
+  <!-- PROGRAM -->
+  <main id="view-program" class="flex-1 bg-slate-900 px-4 py-6 text-slate-50 md:p-8">
+    <div class="mx-auto max-w-5xl space-y-6">
+      <header class="flex flex-col gap-4 rounded-2xl border border-slate-700 bg-slate-800/90 p-6 shadow-lg md:flex-row md:items-center md:justify-between">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border border-blue-500/30 bg-blue-600/20 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-400">19–25 Ekim Kampı (Revize v2)</span>
+            <span id="syncBadge" class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">● E-Tablo Senkron Aktif</span>
+          </div>
+          <h1 class="mt-2 text-2xl font-extrabold tracking-tight md:text-3xl">Furkan — İTÜ Elektrik (İlk 5.000)</h1>
+          <p class="mt-1 text-sm text-slate-400">Salı Maç Günü Kurtarma Revizesi + Çarşamba/Perşembe Akıllı Telafi</p>
+        </div>
+        <div class="flex flex-col items-start gap-2 md:items-end">
+          <div class="md:text-right">
+            <span class="block text-xs text-slate-400">Haftalık İlerleme</span>
+            <span id="progressText" class="text-2xl font-black text-emerald-400">0 / 35 (%0)</span>
+          </div>
+          <button type="button" onclick="pushAllToSheet()" class="rounded-lg border border-slate-600 bg-slate-700 px-3 py-1.5 text-xs text-slate-200 transition hover:bg-slate-600">
+            🔄 Tabloyu Şimdi Eşitle
+          </button>
+        </div>
+      </header>
+
+      <div class="h-3 w-full overflow-hidden rounded-full border border-slate-700 bg-slate-800">
+        <div id="progressBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+      </div>
+
+      <div id="dayTabs" class="flex flex-wrap gap-2" role="tablist" aria-label="Gün seç"></div>
+      <div id="tasksContainer" class="space-y-3" role="tabpanel"></div>
+
+      <footer class="flex flex-col items-center justify-between gap-2 rounded-xl border border-slate-700/70 bg-slate-800/60 p-4 text-xs text-slate-400 sm:flex-row">
+        <div>⏰ <strong>Uyku Kuralı:</strong> 00:30 Yatış – 07:30/08:00 Kalkış (Askeri Uyku &amp; 4-7-8 Nefes)</div>
+        <div>📅 <strong>Bu Gece 00:00:</strong> Salı Kurtarma Operasyonu Süre Raporu</div>
+      </footer>
     </div>
   </main>
 
@@ -391,53 +420,53 @@
     const PROVIDED_PROGRAM_WEEK_KEY = "2026-10-19";
     const PROVIDED_WEEKLY_PROGRAM = {
       pazartesi: [
-        ["Trigonometri 1-5. Bölüm (Tüm Videolar + Ödev Testi 1, 2, Birim Çember Özel, 3, 4, 5)", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["Fizik Bilimine Giriş (1-2. Ders + 3 Test) & Madde ve Özellikleri (1-4. Ders + 6 Test)", "345 Allstar TYT Fizik", "2 saat"],
-        ["Kimya Bilimi (1-5. Ders + 6 Test) & Atom ve Periyodik Sistem (1-2. Ders)", "345 Allstar TYT Kimya", "2 saat"],
-        ["Yaşam Bilimi Biyoloji (1-6. Ders + ÖSYM 1-2) & Canlı Yapısındaki Bileşikler (1-5. Ders)", "345 Allstar TYT Biyoloji", "2 saat"]
+        ["Trigonometri 1-5. Bölüm (Tüm Videolar + Ödev Testi 1, 2, Birim Çember Özel, 3, 4, 5)", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Fizik Bilimine Giriş (1-2. Ders + 3 Test) & Madde ve Özellikleri (1-4. Ders + 6 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 2 Saat"],
+        ["Kimya Bilimi (1-5. Ders + 6 Test) & Atom ve Periyodik Sistem (1-2. Ders)", "📖 345 Allstar TYT Kimya", "⏱️ 2 Saat"],
+        ["Yaşam Bilimi Biyoloji (1-6. Ders + ÖSYM 1-2) & Canlı Yapısındaki Bileşikler (1-5. Ders)", "📖 345 Allstar TYT Biyoloji", "⏱️ 2 Saat"]
       ],
       salı: [
-        ["Trigonometri 6-10. Bölüm (Tüm Videolar + Ödev Testi 6A-B, 7A-B, 8, 9, 10)", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["Hareket (1-3. Ders + Karma 1-4 & Günlük Hayat 1-2 - 6 Test)", "345 Allstar TYT Fizik", "1.5 saat"],
-        ["Atom ve Periyodik Sistem Bitiş (3-5. Ders + Karma 1-3 & ÖSYM 1-3 - 6 Test)", "345 Allstar TYT Kimya", "1.5 saat"],
-        ["Canlı Yapısındaki Bileşikler Bitiş (6-19. Dersler + 8 ÖSYM Testi Tamamı)", "345 Allstar TYT Biyoloji", "3 saat"]
+        ["[16:45-18:15] Canlı Yapısındaki Bileşikler (6-12. Ders: Lipit, Protein, Vitamin 1.5x + ÖSYM 1-2-3-4)", "📖 345 Allstar TYT Biyoloji", "⏱️ 1.5 Saat"],
+        ["[18:25-19:15] Hareket (1-3. Ders Videoları 1.5x + Karma 1-2-3-4 Testleri)", "📖 345 Allstar TYT Fizik", "⏱️ 50 Dakika"],
+        ["[19:15-20:00] Atom ve Periyodik Sistem Bitiş (3-5. Dersler 1.5x + ÖSYM 1-2-3 Testleri)", "📖 345 Allstar TYT Kimya", "⏱️ 45 Dakika"],
+        ["[22:00-23:30] Trigonometri 6-10. Bölüm (Videolar 1.5x + Ödev Testi 6A-B, 7A-B, 8, 9, 10)", "📖 345 Allstar AYT Mat", "⏱️ 1.5 Saat"],
+        ["[23:30-00:00] Üçgenler Soru Çözümü (Seri 2-3 Test)", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 30 Dakika"]
       ],
       çarşamba: [
-        ["Trigonometri 11-16. Bölüm (Tüm Videolar + Ödev Testi 11, 12, 13, 14A-B, 15A-B, 16A-B)", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["Kuvvet (1-4. Ders + Karma 1-4 & Günlük Hayat 1-2 - 6 Test)", "345 Allstar TYT Fizik", "1.5 saat"],
-        ["Kimyasal Türler Arası Etkileşimler - 1 (1-5. Dersler + Karma 1-2)", "345 Allstar TYT Kimya", "1.5 saat"],
-        ["Hücre Tamamı (1-15. Dersler + 6 ÖSYM Testi)", "345 Allstar TYT Biyoloji", "3 saat"]
+        ["Trigonometri 11-16. Bölüm (Tüm Videolar + Ödev Testi 11, 12, 13, 14A-B, 15A-B, 16A-B)", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Hareket (Günlük Hayat 1-2) + Kuvvet Tamamı (1-4. Ders + Karma 1-4 & Günlük Hayat 1-2)", "📖 345 Allstar TYT Fizik", "⏱️ 1.5 Saat"],
+        ["Atom (Karma 1-2-3) + Kimyasal Türler Arası Etkileşimler - 1 (1-5. Dersler + Karma 1-2)", "📖 345 Allstar TYT Kimya", "⏱️ 1.5 Saat"],
+        ["Hücre Tamamı (1-15. Dersler + 6 ÖSYM Testi)", "📖 345 Allstar TYT Biyoloji", "⏱️ 3 Saat"]
       ],
       perşembe: [
-        ["Trigonometri 17-21. Bölüm (Teoremler, Grafik, Ters Trigo + Ödev Testi 17A-B, 18A-B, 19A-C, 20, 21)", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["İş-Güç-Enerji (1-2. Ders + 6 Test) & Isı ve Sıcaklık (1-4. Ders + 6 Test)", "345 Allstar TYT Fizik", "2.5 saat"],
-        ["Türler Arası Etkileşim Bitiş (6-7. Ders + 4 Test) & Maddenin Halleri (1-5. Ders + 6 Test)", "345 Allstar TYT Kimya", "2 saat"],
-        ["Sınıflandırma (1-2. Ders + ÖSYM 1) & Canlı Âlemleri Başlangıç (1-5. Ders)", "345 Allstar TYT Biyoloji", "1.5 saat"]
+        ["Trigonometri 17-21. Bölüm (Teoremler, Grafik, Ters Trigo + Ödev Testi 17A-B, 18A-B, 19A-C, 20, 21)", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["İş-Güç-Enerji (1-2. Ders + 6 Test) & Isı ve Sıcaklık (1-4. Ders + 6 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 2 Saat"],
+        ["Türler Arası Etkileşim Bitiş (6-7. Ders + 4 Test) & Maddenin Halleri (1-5. Ders + 6 Test)", "📖 345 Allstar TYT Kimya", "⏱️ 1.5 Saat"],
+        ["Bileşikler Bitiş (13-19. Ders Enzim-DNA-ATP + 4 Test) + Sınıflandırma (1-2. Ders + 1 Test) & Âlemler (1-5. Ders)", "📖 345 Allstar TYT Biyoloji", "⏱️ 2.5 Saat"]
       ],
       cuma: [
-        ["Trigonometri 22-26. Bölüm (Toparlayalım 1, Toplam-Fark, Yarım Açı + Testler 23A-B, 24A-B, 25A-C, 26A-B)", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["Elektrostatik (1-2. Ders + 4 Test), Elektrik (6 Test) & Manyetizma (1. Ders + 3 Test)", "345 Allstar TYT Fizik", "2 saat"],
-        ["Doğa ve Kimya (1-2. Ders + 3 Test) & Kimyasal Hesaplamalar (1-7. Ders + 5 Test)", "345 Allstar TYT Kimya", "2.5 saat"],
-        ["Canlı Âlemleri Bitiş (6-10. Ders + 6 ÖSYM Testi Tamamı)", "345 Allstar TYT Biyoloji", "1.5 saat"]
+        ["Trigonometri 22-26. Bölüm (Toparlayalım 1, Toplam-Fark, Yarım Açı + Testler 23A-B, 24A-B, 25A-C, 26A-B)", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Elektrostatik (1-2. Ders + 4 Test), Elektrik (6 Test) & Manyetizma (1. Ders + 3 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 2 Saat"],
+        ["Doğa ve Kimya (1-2. Ders + 3 Test) & Kimyasal Hesaplamalar (1-7. Ders + 5 Test)", "📖 345 Allstar TYT Kimya", "⏱️ 2.5 Saat"],
+        ["Canlı Âlemleri Bitiş (6-10. Ders + 6 ÖSYM Testi Tamamı)", "📖 345 Allstar TYT Biyoloji", "⏱️ 1.5 Saat"]
       ],
       cumartesi: [
-        ["Trigonometri 27-35. Bölüm (Yarım Açı Soru, Denklemler, Toparlayalım 2 + Testler 27A-B, 28-34)", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["Basınç (1-3. Ders + 6 Test), Kaldırma Kuv. (1-2. Ders + 3 Test) & Dalgalar (5 Ders + 11 Test)", "345 Allstar TYT Fizik", "2.5 saat"],
-        ["Karışımlar (1-6. Ders + Karma 1-3 & ÖSYM 1-2 - 5 Test)", "345 Allstar TYT Kimya", "1.5 saat"],
-        ["Hücre Bölünmeleri ve Üreme (1-7. Ders + 6 ÖSYM Testi)", "345 Allstar TYT Biyoloji", "2 saat"]
+        ["Trigonometri 27-35. Bölüm (Yarım Açı Soru, Denklemler, Toparlayalım 2 + Testler 27A-B, 28-34)", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Basınç (1-3. Ders + 6 Test), Kaldırma Kuv. (1-2. Ders + 3 Test) & Dalgalar (5 Ders + 11 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 2.5 Saat"],
+        ["Karışımlar (1-6. Ders + Karma 1-3 & ÖSYM 1-2 - 5 Test)", "📖 345 Allstar TYT Kimya", "⏱️ 1.5 Saat"],
+        ["Hücre Bölünmeleri ve Üreme (1-7. Ders + 6 ÖSYM Testi)", "📖 345 Allstar TYT Biyoloji", "⏱️ 2 Saat"]
       ],
       pazar: [
-        ["Trigonometri Mühürleme: ÖSYM Testleri (1-10) + Seçici Sorular Testi", "345 Allstar AYT Mat", "2 saat"],
-        ["Üçgenler Soru Çözümü", "345 GGÇK / Eyüp B. SB", "1 saat"],
-        ["Optik Tamamı: Aydınlanma, Düzlem/Küresel Ayna, Kırılma, Mercekler (13 Ders + 21 Test)", "345 Allstar TYT Fizik", "3 saat"],
-        ["Asit-Baz-Tuz (1-4. Ders + 5 Test) & Kimya Her Yerde (1-4. Ders + 2 Test)", "345 Allstar TYT Kimya", "1.5 saat"],
-        ["Ekosistem Ekolojisi ve Güncel Çevre Sorunları (1-10. Ders + 5 ÖSYM Testi)", "345 Allstar TYT Biyoloji", "1.5 saat"]
+        ["Trigonometri Mühürleme: ÖSYM Testleri (1-10) + Seçici Sorular Testi", "📖 345 Allstar AYT Mat", "⏱️ 2 Saat"],
+        ["Üçgenler Soru Çözümü", "📖 345 GGÇK / Eyüp B. SB", "⏱️ 1 Saat"],
+        ["Optik Tamamı: Aydınlanma, Düzlem/Küresel Ayna, Kırılma, Mercekler (13 Ders + 21 Test)", "📖 345 Allstar TYT Fizik", "⏱️ 3 Saat"],
+        ["Asit-Baz-Tuz (1-4. Ders + 5 Test) & Kimya Her Yerde (1-4. Ders + 2 Test)", "📖 345 Allstar TYT Kimya", "⏱️ 1.5 Saat"],
+        ["Ekosistem Ekolojisi ve Güncel Çevre Sorunları (1-10. Ders + 5 ÖSYM Testi)", "📖 345 Allstar TYT Biyoloji", "⏱️ 1.5 Saat"]
       ]
     };
     const PROVIDED_PROGRAM_DATA = Object.fromEntries(Object.entries(PROVIDED_WEEKLY_PROGRAM).map(([day, tasks]) => [
@@ -446,7 +475,7 @@
     ]));
     const PROVIDED_PROGRAM_SCHEDULE_META = Object.fromEntries(DAYS_INFO.map(day => [
       day.name.toLocaleLowerCase("tr-TR"),
-      { duration: "9 saat", durationLabel: "Toplam süre" }
+      { duration: day.name === "Salı" ? "5 saat 25 dakika" : "9 saat", durationLabel: "Toplam süre" }
     ]));
     // Ekli başlangıç planı yalnızca 12–18 Ekim 2026 haftası için geçerlidir.
     const isInitialCampWeek = getScheduleDate(0).getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
@@ -486,6 +515,32 @@
             : {}))
       };
     }
+    const PROVIDED_PROGRAM_REVISION_KEY = "furkan_program_revision_2026-10-19";
+    if (
+      isProvidedProgramWeek &&
+      localStorage.getItem(PROVIDED_PROGRAM_REVISION_KEY) !== "2"
+    ) {
+      const previousProgram = programWeeks[PROVIDED_PROGRAM_WEEK_KEY].program;
+      const revisedProgram = JSON.parse(JSON.stringify(PROVIDED_PROGRAM_DATA));
+      Object.entries(revisedProgram).forEach(([day, tasks]) => {
+        tasks.forEach(task => {
+          const previousTask = previousProgram[day]?.find(candidate =>
+            candidate.title === task.title &&
+            String(candidate.sub || "").replace(/^(?:📖|⏱️)\s*/u, "") ===
+              String(task.sub || "").replace(/^(?:📖|⏱️)\s*/u, "")
+          );
+          if (previousTask) {
+            task.done = Boolean(previousTask.done);
+            task.status = task.done ? "Tamamlandı" : (previousTask.status || "Bekliyor");
+          }
+        });
+      });
+      programWeeks[PROVIDED_PROGRAM_WEEK_KEY] = {
+        program: revisedProgram,
+        scheduleMeta: JSON.parse(JSON.stringify(PROVIDED_PROGRAM_SCHEDULE_META))
+      };
+      localStorage.setItem(PROVIDED_PROGRAM_REVISION_KEY, "2");
+    }
     const shouldResetForScheduleWeek = storedScheduleWeekKey !== null &&
       storedScheduleWeekKey !== currentScheduleWeekKey;
     let appState = JSON.parse(JSON.stringify(programWeeks[currentScheduleWeekKey].program));
@@ -502,6 +557,7 @@
     let taskSyncRetryTimer = null;
     let viewedScheduleWeekKey = currentScheduleWeekKey;
     let viewedWeekOffset = 0;
+    let activeProgramDay = "salı";
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
     let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
@@ -755,11 +811,26 @@
         });
         status.textContent = "Excel'e haftalık program güncelleme isteği gönderildi; yanıt doğrulanamıyor.";
         status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
+        document.getElementById("syncBadge").textContent = "● E-Tablo Güncelleme İsteği Gönderildi";
+        document.getElementById("syncBadge").className = "rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400";
       } catch (error) {
         console.error("Haftalık program Excel'e gönderilemedi:", error);
         status.textContent = "Plan siteye kaydedildi ancak Excel'e gönderilemedi.";
         status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
+        document.getElementById("syncBadge").textContent = "● E-Tablo Eşitlemesi Bekliyor";
+        document.getElementById("syncBadge").className = "rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-400";
       }
+    }
+
+    function pushAllToSheet() {
+      if (!isViewingCurrentWeek()) {
+        setTaskSyncStatus("Geçmiş haftalar yalnızca bu cihazda saklanır; Excel eşitlemesi kapalı.", "text-slate-500");
+        return;
+      }
+      const badge = document.getElementById("syncBadge");
+      badge.textContent = "⏳ E-Tablo Eşitleniyor...";
+      badge.className = "rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400";
+      syncWeeklyPlanToSheet();
     }
 
     function openReminderModal() {
@@ -994,74 +1065,82 @@
       const tasks = DAYS_INFO.flatMap(day => appState[day.name.toLocaleLowerCase("tr-TR")] || []);
       const completedCount = tasks.filter(task => task.done).length;
       const percent = tasks.length ? Math.round(completedCount / tasks.length * 100) : 0;
-      document.getElementById("weekly-progress-label").textContent = tasks.length
-        ? `Haftalık ilerleme: ${completedCount}/${tasks.length} görev (%${percent})`
-        : "Haftalık ilerleme: görev yok";
-      document.getElementById("weekly-progress-bar").style.width = `${percent}%`;
-      document.getElementById("weekly-progress").setAttribute("aria-valuenow", String(percent));
+      const progressText = document.getElementById("progressText");
+      const progressBar = document.getElementById("progressBar");
+      if (progressText) progressText.textContent = `${completedCount} / ${tasks.length} (%${percent})`;
+      if (progressBar) progressBar.style.width = `${percent}%`;
+
+      const weeklyProgressLabel = document.getElementById("weekly-progress-label");
+      const weeklyProgressBar = document.getElementById("weekly-progress-bar");
+      const weeklyProgress = document.getElementById("weekly-progress");
+      if (weeklyProgressLabel) {
+        weeklyProgressLabel.textContent = tasks.length
+          ? `Haftalık ilerleme: ${completedCount}/${tasks.length} görev (%${percent})`
+          : "Haftalık ilerleme: görev yok";
+      }
+      if (weeklyProgressBar) weeklyProgressBar.style.width = `${percent}%`;
+      if (weeklyProgress) weeklyProgress.setAttribute("aria-valuenow", String(percent));
     }
 
     function renderProgram() {
-      const grid = document.getElementById("kanban-grid");
-      grid.innerHTML = "";
       updateCurrentWeekLabel();
       updateWeeklyProgress();
       const [year, month, day] = viewedScheduleWeekKey.split("-").map(Number);
       const weekStart = new Date(year, month - 1, day);
-      const today = new Date();
+      const tabContainer = document.getElementById("dayTabs");
+      tabContainer.innerHTML = "";
 
-      DAYS_INFO.forEach(d => {
-        const key = d.name.toLocaleLowerCase("tr-TR");
-        const date = getScheduleDate(d.offset, weekStart);
-        const isToday = date.toDateString() === today.toDateString();
-        const col = document.createElement("div");
-        col.className = "col-border px-2.5 pt-3 pb-8 flex flex-col";
-        col.dataset.dayKey = key;
-
-        let html = `
-          <div class="text-center pb-3 mb-2 border-b border-slate-100">
-            <div class="text-xs ${isToday ? "font-bold text-indigo-600" : "text-slate-400"}">${d.name}${isToday ? " · Bugün" : ""}</div>
-            <div class="text-lg font-bold text-slate-800 my-0.5">${formatScheduleDate(date)}</div>
-            <div class="text-[10px] text-slate-400 font-medium">${scheduleMeta[key]?.duration
-              ? `${escapeHtml(scheduleMeta[key].durationLabel || "Toplam süre")}: ${escapeHtml(scheduleMeta[key].duration)}`
-              : "Süre belirtilmedi"}</div>
-          </div>
-
-          <!-- + Görev Ekle Butonu -->
-          <button onclick="addTask('${d.name}')" class="w-full py-1.5 mb-3 text-center text-xs font-semibold text-indigo-600 hover:bg-indigo-50/60 rounded transition">
-            + Görev Ekle
-          </button>
-
-          <!-- Görev Kartları -->
-          <div class="space-y-2.5 flex-1">
-        `;
-
-        const tasks = appState[key] || [];
-
-        if (tasks.length === 0) {
-          html += `<div class="py-4 text-center text-[11px] text-slate-400">Görev yok</div>`;
-        }
-
-        tasks.forEach((t, tIdx) => {
-          const status = t.done ? "Tamamlandı" : (t.status || "Bekliyor");
-          html += `
-            <div data-task-index="${tIdx}" onclick="toggleTask('${key}', ${tIdx})" class="baykus-card ${t.done ? 'completed' : ''}" title="Taşımak için basılı tutup sürükle">
-              <div class="flex items-start justify-between">
-                <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(t.title)}</span>
-                <button type="button" data-task-drag-handle onclick="event.stopPropagation()" aria-label="Görevi taşımak için basılı tut" title="Görevi taşımak için basılı tut" class="task-drag-handle -mr-1 -mt-1 px-1 text-slate-400 hover:text-indigo-600 font-bold text-base leading-none">⠿</button>
-              </div>
-              ${t.sub ? `<div class="mt-1 flex items-start gap-1 text-[11px] font-medium leading-tight text-slate-500"><svg class="mt-px h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg><span>${escapeHtml(t.sub)}</span></div>` : ""}
-              ${t.duration ? `<div class="mt-1 flex items-center gap-1 text-[10px] font-semibold text-indigo-600"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>${escapeHtml(t.duration)}</span></div>` : ""}
-              ${t.goal ? `<div class="text-[10px] text-indigo-700 font-semibold mt-2">Hedef: ${escapeHtml(t.goal)}</div>` : ""}
-              ${t.note ? `<div class="text-[10px] text-slate-500 mt-1">${escapeHtml(t.note)}</div>` : ""}
-              <div class="text-[10px] text-slate-400 mt-1">Durum: ${escapeHtml(status)}</div>
-            </div>
-          `;
+      DAYS_INFO.forEach(dayInfo => {
+        const dayKey = dayInfo.name.toLocaleLowerCase("tr-TR");
+        const date = getScheduleDate(dayInfo.offset, weekStart);
+        const dayTasks = appState[dayKey] || [];
+        const isActive = dayKey === activeProgramDay;
+        const tab = document.createElement("button");
+        tab.type = "button";
+        tab.className = `rounded-xl border px-4 py-2 text-xs font-bold transition md:text-sm ${
+          isActive
+            ? "border-blue-500 bg-blue-600 text-white shadow-md"
+            : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+        }`;
+        tab.setAttribute("role", "tab");
+        tab.setAttribute("aria-selected", String(isActive));
+        tab.textContent = `${formatScheduleDate(date)} ${dayInfo.name} (${dayTasks.filter(task => task.done).length}/${dayTasks.length})`;
+        tab.addEventListener("click", () => {
+          activeProgramDay = dayKey;
+          renderProgram();
         });
+        tabContainer.appendChild(tab);
+      });
 
-        html += `</div>`;
-        col.innerHTML = html;
-        grid.appendChild(col);
+      const activeDayTasks = appState[activeProgramDay] || [];
+      const taskContainer = document.getElementById("tasksContainer");
+      taskContainer.innerHTML = "";
+      taskContainer.setAttribute("aria-label", `${DAYS_INFO.find(day => day.name.toLocaleLowerCase("tr-TR") === activeProgramDay)?.name || ""} görevleri`);
+
+      activeDayTasks.forEach((task, taskIndex) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = `flex w-full items-center justify-between gap-4 rounded-xl border border-slate-700 bg-slate-800/90 p-4 text-left transition hover:border-slate-500 ${
+          task.done ? "border-emerald-500 bg-emerald-500/10 opacity-70" : ""
+        }`;
+        card.setAttribute("aria-pressed", String(Boolean(task.done)));
+        card.addEventListener("click", () => toggleTask(activeProgramDay, taskIndex));
+        card.innerHTML = `
+          <div class="flex min-w-0 items-start gap-3.5">
+            <span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-slate-500 text-xs text-emerald-400 ${task.done ? "border-emerald-400 bg-emerald-500/20" : ""}" aria-hidden="true">${task.done ? "✓" : ""}</span>
+            <div class="min-w-0">
+              <h3 class="text-sm font-bold md:text-base ${task.done ? "text-slate-400 line-through" : "text-slate-100"}">${escapeHtml(task.title)}</h3>
+              <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                ${task.sub ? `<span class="rounded-md bg-slate-700/80 px-2.5 py-0.5 font-medium text-blue-300">${escapeHtml(task.sub)}</span>` : ""}
+                ${task.duration ? `<span class="rounded-md bg-slate-700/80 px-2.5 py-0.5 font-medium text-amber-300">${escapeHtml(task.duration)}</span>` : ""}
+              </div>
+            </div>
+          </div>
+          <span class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold ${
+            task.done ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-700 text-slate-400"
+          }">${task.done ? "Tamamlandı" : "Bekliyor"}</span>
+        `;
+        taskContainer.appendChild(card);
       });
     }
 
@@ -1290,6 +1369,11 @@
           : "Çevrimdışı; görev bağlantı gelince eşitlenecek.",
         "text-amber-600"
       );
+      const badge = document.getElementById("syncBadge");
+      badge.textContent = navigator.onLine ? "⏳ E-Tablo Eşitleniyor..." : "● Çevrimdışı — eşitleme sırada";
+      badge.className = navigator.onLine
+        ? "rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400"
+        : "rounded-full border border-slate-500/20 bg-slate-500/10 px-2.5 py-1 text-xs font-medium text-slate-400";
       flushTaskSyncQueue();
     }
 
@@ -1324,9 +1408,15 @@
           }
         }
         setTaskSyncStatus("Senkronizasyon isteği gönderildi.", "text-emerald-600");
+        const badge = document.getElementById("syncBadge");
+        badge.textContent = "● E-Tablo Güncelleme İsteği Gönderildi";
+        badge.className = "rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400";
       } catch (error) {
         console.error("Görev durumu Apps Script'e gönderilemedi:", error);
         setTaskSyncStatus("Bağlantı bekleniyor; görev eşitlemesi sıraya alındı.", "text-amber-600");
+        const badge = document.getElementById("syncBadge");
+        badge.textContent = "● E-Tablo Eşitlemesi Bekliyor";
+        badge.className = "rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-400";
         if (taskSyncRetryTimer === null) {
           taskSyncRetryTimer = window.setTimeout(() => {
             taskSyncRetryTimer = null;
@@ -1555,7 +1645,7 @@
       document.getElementById('view-deneme-sorulari').classList.add('hidden');
       document.getElementById('view-soru-bankasi').classList.add('hidden');
       document.getElementById('nav-soru-kumbaram').className = "text-slate-500 hover:text-slate-900 pb-3.5 pt-1 transition border-b-2 border-transparent";
-      document.getElementById('student-week-bar').classList.toggle('hidden', tab === 'soru-kumbaram');
+      document.getElementById('student-week-bar').classList.toggle('hidden', tab === 'soru-kumbaram' || tab === 'program');
       document.getElementById('question-bank-nav').classList.toggle('hidden', tab !== 'soru-kumbaram');
 
       if (tab === 'soru-kumbaram') {
