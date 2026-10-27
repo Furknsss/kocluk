@@ -1,4 +1,4 @@
-const CACHE_NAME = "kocluk-pwa-v12";
+const CACHE_NAME = "kocluk-pwa-v15";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -37,29 +37,22 @@ self.addEventListener("fetch", event => {
   const isAppAsset = ["script", "style", "font", "image"].includes(request.destination);
 
   if (request.mode === "navigate") {
-    const networkUpdate = fetch(request).then(async response => {
-      if (response.ok) {
-        await caches.open(CACHE_NAME)
-          .then(cache => cache.put("./index.html", response.clone()))
-          .catch(error => console.error("Sayfa önbelleğe alınamadı:", error));
-      }
-      return response;
-    });
-    event.waitUntil(
-      networkUpdate.then(() => undefined).catch(error => {
-        console.error("Sayfa arka planda güncellenemedi:", error);
-      })
-    );
     event.respondWith(
-      caches.open(CACHE_NAME).then(async cache => {
-        const cachedResponse = await cache.match("./index.html") || await cache.match("./");
-        if (cachedResponse) return cachedResponse;
-        return networkUpdate.catch(async error => {
-          const fallback = await cache.match(request);
-          if (fallback) return fallback;
+      fetch(request)
+        .then(async response => {
+          if (response.ok) {
+            await caches.open(CACHE_NAME)
+              .then(cache => cache.put("./index.html", response.clone()))
+              .catch(error => console.error("Sayfa önbelleğe alınamadı:", error));
+          }
+          return response;
+        })
+        .catch(async error => {
+          const cache = await caches.open(CACHE_NAME);
+          const cachedResponse = await cache.match("./index.html") || await cache.match("./") || await cache.match(request);
+          if (cachedResponse) return cachedResponse;
           throw error;
-        });
-      })
+        })
     );
     return;
   }

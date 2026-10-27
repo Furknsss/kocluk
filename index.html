@@ -129,13 +129,10 @@
         <button id="install-button" type="button" onclick="installApp()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-slate-50" role="menuitem">
           📲 Uygulamayı yükle
         </button>
-        <button id="camp-plan-button" type="button" onclick="applyAttachedCampPlan()" class="hidden w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-indigo-50" role="menuitem">
-          📅 19–25 Ekim programını Excel'e uygula
+        <button id="json-import-menu-button" type="button" onclick="openJsonImportModal()" class="w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-600 hover:bg-indigo-50" role="menuitem">
+          Program Yükle
         </button>
-        <button id="sync-button" type="button" onclick="fetchSheetData()" class="w-full px-4 py-2.5 text-left text-sm text-indigo-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" role="menuitem">
-          🔄 Senkronize Et
-        </button>
-        <span id="sync-status" class="block px-4 pb-2 text-xs font-semibold" role="status" aria-live="polite"></span>
+        <span id="sync-status" class="hidden block px-4 pb-2 text-xs font-semibold" role="status" aria-live="polite"></span>
       </div>
     </div>
   </header>
@@ -181,9 +178,6 @@
           <div id="weekly-progress-bar" class="h-full rounded-full bg-emerald-500 transition-[width] duration-300"></div>
         </div>
       </div>
-      <span id="camp-plan-status" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-        ✓ 19–25 Ekim Programı Aktif
-      </span>
       <span id="syncBadge" class="hidden" aria-live="polite"></span>
     </div>
   </section>
@@ -342,6 +336,38 @@
     </section>
   </div>
 
+  <div id="json-import-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-labelledby="json-import-title" onclick="if (event.target === this) closeModal('json-import-modal')">
+    <section class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 id="json-import-title" class="text-base font-bold text-slate-900">Program Yükle</h2>
+        <button type="button" onclick="closeModal('json-import-modal')" aria-label="Program yükleme penceresini kapat" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+      </div>
+      <p class="text-xs leading-relaxed text-slate-600">
+        Gemini'den aldığın JSON formatındaki haftalık program kodunu aşağıya yapıştırabilir veya <code>.json</code> dosyası seçerek ilgili haftaya (<strong id="json-import-target-week">Bu hafta</strong>) doğrudan entegre edebilirsin.
+      </p>
+      <div class="mt-3">
+        <label for="json-file-input" class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+          📂 JSON Dosyası Seç (.json)
+        </label>
+        <input id="json-file-input" type="file" accept=".json,application/json" class="hidden" onchange="handleJsonFileSelect(this)" />
+      </div>
+      <div class="mt-3">
+        <label for="json-program-textarea" class="block text-xs font-semibold text-slate-700 mb-1">JSON İçeriği</label>
+        <textarea
+          id="json-program-textarea"
+          rows="8"
+          placeholder='{"student": "Furkan", "week": "2026-10-27_to_2026-11-01", "schedule": [{"date": "2026-10-27", "day": "Salı", "total_hours": 6.5, "tasks": [...]}]}'
+          class="w-full rounded-lg border border-slate-200 p-2.5 font-mono text-xs text-slate-800 focus:border-indigo-500 focus:outline-none"
+        ></textarea>
+      </div>
+      <p id="json-import-status" class="mt-2 text-xs font-semibold hidden" role="status" aria-live="polite"></p>
+      <div class="mt-4 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeModal('json-import-modal')" class="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">İptal</button>
+        <button type="button" onclick="applyJsonProgramImport()" class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700">Programa Entegre Et</button>
+      </div>
+    </section>
+  </div>
+
   <script>
     // CSV URL BAĞLANTIN (Canlı Senkron İçin)
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREMe7KLIeBp5WQo7VD0YdJik2p5A_go56rrMgMJ0X2CCs0-iiWqAhrNx_glgWOXwkjx-lVxLnMoz_U/pub?output=csv";
@@ -388,6 +414,7 @@
       cumartesi: { duration: "6 saat 15 dakika", durationLabel: "Toplam süre" },
       pazar: { duration: "5 saat 30 dakika", durationLabel: "Toplam süre" }
     };
+    const INITIAL_CAMP_WEEK_KEY = "2026-10-12";
     const PROVIDED_PROGRAM_WEEK_KEY = "2026-10-19";
     const FOLLOWING_WEEK_PROGRAM_KEY = "2026-10-26";
     const PROVIDED_WEEKLY_PROGRAM = {
@@ -518,7 +545,78 @@
       cumartesi: { duration: "3 saat 30 dakika", durationLabel: "Toplam süre" },
       pazar: { duration: "6 saat 55 dakika", durationLabel: "Toplam süre" }
     };
-    // Ekli başlangıç planı yalnızca 12–18 Ekim 2026 haftası için geçerlidir.
+    const WEEK_DEFINITIONS = {
+      [INITIAL_CAMP_WEEK_KEY]: {
+        program: INITIAL_CAMP_DATA,
+        scheduleMeta: INITIAL_SCHEDULE_META,
+        revisionKey: "furkan_program_revision_2026-10-12",
+        revision: "2",
+        statusText: "✓ 16–18 Ekim Kampı Aktif",
+        buttonText: "📅 16–18 Ekim kamp planını Excel'e uygula",
+        planLabel: "16–18 Ekim kamp planı"
+      },
+      [PROVIDED_PROGRAM_WEEK_KEY]: {
+        program: PROVIDED_PROGRAM_DATA,
+        scheduleMeta: PROVIDED_PROGRAM_SCHEDULE_META,
+        revisionKey: "furkan_program_revision_2026-10-19",
+        revision: "5",
+        statusText: "✓ 19–25 Ekim Programı Aktif",
+        buttonText: "📅 19–25 Ekim programını Excel'e uygula",
+        planLabel: "19–25 Ekim programı"
+      },
+      [FOLLOWING_WEEK_PROGRAM_KEY]: {
+        program: FOLLOWING_WEEK_PROGRAM_DATA,
+        scheduleMeta: FOLLOWING_WEEK_SCHEDULE_META,
+        revisionKey: "furkan_program_revision_2026-10-26",
+        revision: "8",
+        statusText: "✓ 26 Ekim – 1 Kasım Programı Aktif",
+        buttonText: "📅 26 Ekim – 1 Kasım programını Excel'e uygula",
+        planLabel: "26 Ekim – 1 Kasım programı"
+      }
+    };
+
+    function getTaskSignatureList(programByDay) {
+      if (!programByDay || typeof programByDay !== "object") return [];
+      return DAYS_INFO.flatMap(day => {
+        const dayKey = day.name.toLocaleLowerCase("tr-TR");
+        return (programByDay[dayKey] || []).map(task =>
+          JSON.stringify([dayKey, (task.title || "").trim(), (task.sub || "").trim()])
+        );
+      });
+    }
+
+    function doesProgramMatchExpected(candidateProgram, expectedProgram) {
+      const expectedSignatures = getTaskSignatureList(expectedProgram);
+      const candidateSignatures = getTaskSignatureList(candidateProgram);
+      if (expectedSignatures.length === 0 || expectedSignatures.length !== candidateSignatures.length) {
+        return false;
+      }
+      const candidateSet = new Set(candidateSignatures);
+      return expectedSignatures.every(sig => candidateSet.has(sig));
+    }
+
+    function mergeStatusIntoExpectedProgram(expectedProgram, existingProgram) {
+      const cloned = JSON.parse(JSON.stringify(expectedProgram));
+      if (!existingProgram || typeof existingProgram !== "object") return cloned;
+      for (const [dayKey, tasks] of Object.entries(cloned)) {
+        const existingTasks = Array.isArray(existingProgram[dayKey]) ? existingProgram[dayKey] : [];
+        tasks.forEach(task => {
+          const match = existingTasks.find(
+            candidate =>
+              candidate &&
+              (candidate.title || "").trim() === (task.title || "").trim() &&
+              (candidate.sub || "").trim() === (task.sub || "").trim()
+          );
+          if (match && typeof match.done === "boolean") {
+            task.done = match.done;
+            task.status = match.done ? "Tamamlandı" : (match.status || "Bekliyor");
+            if (match.note) task.note = match.note;
+          }
+        });
+      }
+      return cloned;
+    }
+
     const isInitialCampWeek = getScheduleDate(0).getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
     const currentScheduleWeekKey = getScheduleWeekKey();
     const storedScheduleWeekKey = localStorage.getItem("furkan_program_week");
@@ -532,45 +630,31 @@
         scheduleMeta: JSON.parse(localStorage.getItem("furkan_schedule_meta") || "{}")
       };
     }
-    const initialWeekKey = getScheduleWeekKey(new Date(2026, 9, 16));
-    if (!programWeeks[initialWeekKey]) {
-      programWeeks[initialWeekKey] = {
-        program: JSON.parse(JSON.stringify(INITIAL_CAMP_DATA)),
-        scheduleMeta: JSON.parse(JSON.stringify(INITIAL_SCHEDULE_META))
-      };
-    }
     const emptyWeekProgram = () => Object.fromEntries(
       DAYS_INFO.map(day => [day.name.toLocaleLowerCase("tr-TR"), []])
     );
+    const CUSTOM_IMPORTED_WEEKS_KEY = "furkan_custom_imported_weeks";
+    const customImportedWeeks = JSON.parse(localStorage.getItem(CUSTOM_IMPORTED_WEEKS_KEY) || "{}");
+    Object.entries(WEEK_DEFINITIONS).forEach(([weekKey, def]) => {
+      if (customImportedWeeks[weekKey]) return;
+      const existingWeek = programWeeks[weekKey];
+      const revisionMatches = localStorage.getItem(def.revisionKey) === def.revision;
+      const tasksMatchWeek = existingWeek && doesProgramMatchExpected(existingWeek.program, def.program);
+      if (!existingWeek || !revisionMatches || !tasksMatchWeek) {
+        programWeeks[weekKey] = {
+          program: mergeStatusIntoExpectedProgram(def.program, existingWeek?.program),
+          scheduleMeta: JSON.parse(JSON.stringify(def.scheduleMeta))
+        };
+        localStorage.setItem(def.revisionKey, def.revision);
+      }
+    });
     if (!programWeeks[currentScheduleWeekKey]) {
       const defaultProgram = getDefaultWeekProgram(currentScheduleWeekKey);
       const defaultScheduleMeta = getDefaultWeekScheduleMeta(currentScheduleWeekKey);
       programWeeks[currentScheduleWeekKey] = {
-        program: JSON.parse(JSON.stringify(isInitialCampWeek ? INITIAL_CAMP_DATA : defaultProgram)),
-        scheduleMeta: JSON.parse(JSON.stringify(isInitialCampWeek ? INITIAL_SCHEDULE_META : defaultScheduleMeta))
+        program: JSON.parse(JSON.stringify(defaultProgram)),
+        scheduleMeta: JSON.parse(JSON.stringify(defaultScheduleMeta))
       };
-    }
-    const FOLLOWING_WEEK_PROGRAM_REVISION_KEY = "furkan_program_revision_2026-10-26";
-    if (
-      programWeeks[FOLLOWING_WEEK_PROGRAM_KEY] &&
-      localStorage.getItem(FOLLOWING_WEEK_PROGRAM_REVISION_KEY) !== "7"
-    ) {
-      programWeeks[FOLLOWING_WEEK_PROGRAM_KEY] = {
-        program: JSON.parse(JSON.stringify(FOLLOWING_WEEK_PROGRAM_DATA)),
-        scheduleMeta: JSON.parse(JSON.stringify(FOLLOWING_WEEK_SCHEDULE_META))
-      };
-      localStorage.setItem(FOLLOWING_WEEK_PROGRAM_REVISION_KEY, "7");
-    }
-    const PROVIDED_PROGRAM_REVISION_KEY = "furkan_program_revision_2026-10-19";
-    if (
-      programWeeks[PROVIDED_PROGRAM_WEEK_KEY] &&
-      localStorage.getItem(PROVIDED_PROGRAM_REVISION_KEY) !== "4"
-    ) {
-      programWeeks[PROVIDED_PROGRAM_WEEK_KEY] = {
-        program: JSON.parse(JSON.stringify(PROVIDED_PROGRAM_DATA)),
-        scheduleMeta: JSON.parse(JSON.stringify(PROVIDED_PROGRAM_SCHEDULE_META))
-      };
-      localStorage.setItem(PROVIDED_PROGRAM_REVISION_KEY, "4");
     }
     const shouldResetForScheduleWeek = storedScheduleWeekKey !== null &&
       storedScheduleWeekKey !== currentScheduleWeekKey;
@@ -590,7 +674,7 @@
     let viewedWeekOffset = 0;
     const DEFAULT_PROFILE = { name: "Furkan", photo: "" };
     let profile = { ...DEFAULT_PROFILE, grade: "", track: "", ...JSON.parse(localStorage.getItem("furkan_profile") || "{}") };
-    let appSettings = { syncOnLoad: true, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
+    let appSettings = { syncOnLoad: false, ...JSON.parse(localStorage.getItem("furkan_settings") || "{}") };
     if (shouldResetForScheduleWeek || (storedProgramState === null && isInitialCampWeek)) {
       appSettings.syncOnLoad = false;
       localStorage.setItem("furkan_settings", JSON.stringify(appSettings));
@@ -637,7 +721,6 @@
 
       appState = JSON.parse(JSON.stringify(programWeeks[viewedScheduleWeekKey].program));
       scheduleMeta = JSON.parse(JSON.stringify(programWeeks[viewedScheduleWeekKey].scheduleMeta || {}));
-      document.getElementById("sync-button").disabled = !isViewingCurrentWeek();
       renderProgram();
       if (isViewingCurrentWeek()) flushTaskSyncQueue();
     }
@@ -678,14 +761,12 @@
     }
 
     function getDefaultWeekProgram(weekKey) {
-      if (weekKey === PROVIDED_PROGRAM_WEEK_KEY) return JSON.parse(JSON.stringify(PROVIDED_PROGRAM_DATA));
-      if (weekKey === FOLLOWING_WEEK_PROGRAM_KEY) return JSON.parse(JSON.stringify(FOLLOWING_WEEK_PROGRAM_DATA));
+      if (WEEK_DEFINITIONS[weekKey]) return JSON.parse(JSON.stringify(WEEK_DEFINITIONS[weekKey].program));
       return emptyWeekProgram();
     }
 
     function getDefaultWeekScheduleMeta(weekKey) {
-      if (weekKey === PROVIDED_PROGRAM_WEEK_KEY) return JSON.parse(JSON.stringify(PROVIDED_PROGRAM_SCHEDULE_META));
-      if (weekKey === FOLLOWING_WEEK_PROGRAM_KEY) return JSON.parse(JSON.stringify(FOLLOWING_WEEK_SCHEDULE_META));
+      if (WEEK_DEFINITIONS[weekKey]) return JSON.parse(JSON.stringify(WEEK_DEFINITIONS[weekKey].scheduleMeta));
       return {};
     }
 
@@ -732,19 +813,6 @@
           : `${viewedWeekOffset} hafta sonra`;
       document.getElementById("current-week-label").textContent =
         `${weekDescription}: ${format.format(monday)} – ${format.format(sunday)} ${sunday.getFullYear()}`;
-      const isCampWeek = isViewingCurrentWeek() &&
-        monday.getTime() === getScheduleDate(0, new Date(2026, 9, 16)).getTime();
-      const isProvidedWeek = isViewingCurrentWeek() && viewedScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
-      const showPlanControls = isCampWeek || isProvidedWeek;
-      document.getElementById("camp-plan-status").classList.toggle("hidden", !showPlanControls);
-      document.getElementById("camp-plan-button").classList.toggle("hidden", !showPlanControls);
-      document.getElementById("camp-plan-status").textContent = isProvidedWeek
-        ? "✓ 19–25 Ekim Programı Aktif"
-        : "✓ 16–18 Ekim Kampı Aktif";
-      document.getElementById("camp-plan-button").textContent = isProvidedWeek
-        ? "📅 19–25 Ekim programını Excel'e uygula"
-        : "📅 Kamp planını uygula / güncelle";
-      document.getElementById("sync-button").disabled = !isViewingCurrentWeek();
     }
 
     function renderProfile() {
@@ -806,15 +874,13 @@
 
     function applyAttachedCampPlan() {
       closeProfileMenu();
-      const useProvidedProgram = isViewingCurrentWeek() && viewedScheduleWeekKey === PROVIDED_PROGRAM_WEEK_KEY;
-      if (!isInitialCampWeek && !useProvidedProgram) return;
-      const confirmation = useProvidedProgram
-        ? "Bu işlem bu haftanın görevlerini 19–25 Ekim programıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?"
-        : "Bu işlem bu haftanın görevlerini güncel 16–18 Ekim kamp planıyla değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?";
+      const weekDef = isViewingCurrentWeek() ? WEEK_DEFINITIONS[viewedScheduleWeekKey] : null;
+      if (!weekDef) return;
+      const confirmation = `Bu işlem bu haftanın görevlerini ${weekDef.planLabel} ile değiştirip hem siteye hem Excel'deki haftalık program bölümüne gönderir. Excel'deki diğer bölümler korunur. Profil bilgilerin korunur. Devam edilsin mi?`;
       if (!window.confirm(confirmation)) return;
 
-      appState = JSON.parse(JSON.stringify(useProvidedProgram ? PROVIDED_PROGRAM_DATA : INITIAL_CAMP_DATA));
-      scheduleMeta = JSON.parse(JSON.stringify(useProvidedProgram ? PROVIDED_PROGRAM_SCHEDULE_META : INITIAL_SCHEDULE_META));
+      appState = JSON.parse(JSON.stringify(weekDef.program));
+      scheduleMeta = JSON.parse(JSON.stringify(weekDef.scheduleMeta));
       appSettings.syncOnLoad = false;
       saveState();
       localStorage.setItem("furkan_schedule_meta", JSON.stringify(scheduleMeta));
@@ -826,13 +892,10 @@
 
     async function syncWeeklyPlanToSheet() {
       const status = document.getElementById("sync-status");
-      if (!isViewingCurrentWeek()) {
-        status.textContent = "Geçmiş haftalar yalnızca bu cihazda saklanır; Excel eşitlemesi kapalı.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-slate-500";
-        return;
+      if (status) {
+        status.textContent = "Plan siteye kaydedildi; Google Sheets'e otomatik gönderiliyor...";
+        status.className = "hidden block px-4 pb-2 text-xs font-semibold text-amber-600";
       }
-      status.textContent = "Plan siteye kaydedildi; Excel'e gönderiliyor...";
-      status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
       const rows = DAYS_INFO.flatMap(day => {
         const dayKey = day.name.toLocaleLowerCase("tr-TR");
         return (appState[dayKey] || []).map(task => [
@@ -853,16 +916,12 @@
           headers: { "Content-Type": "text/plain;charset=UTF-8" },
           body: JSON.stringify({ action: "replaceWeeklyProgram", rows })
         });
-        status.textContent = "Excel'e haftalık program güncelleme isteği gönderildi; yanıt doğrulanamıyor.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-amber-600";
-        document.getElementById("syncBadge").textContent = "● E-Tablo Güncelleme İsteği Gönderildi";
-        document.getElementById("syncBadge").className = "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700";
+        if (status) {
+          status.textContent = "Google Sheets ile otomatik senkronize edildi.";
+          status.className = "hidden block px-4 pb-2 text-xs font-semibold text-emerald-600";
+        }
       } catch (error) {
-        console.error("Haftalık program Excel'e gönderilemedi:", error);
-        status.textContent = "Plan siteye kaydedildi ancak Excel'e gönderilemedi.";
-        status.className = "block px-4 pb-2 text-xs font-semibold text-rose-600";
-        document.getElementById("syncBadge").textContent = "● E-Tablo Eşitlemesi Bekliyor";
-        document.getElementById("syncBadge").className = "rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700";
+        console.error("Haftalık program Google Sheets'e gönderilemedi:", error);
       }
     }
 
@@ -1095,6 +1154,437 @@
       if (!document.getElementById("profile-menu-wrap").contains(event.target)) closeProfileMenu();
     });
 
+    const DAY_ALIASES = new Map([
+      ["pazartesi", "pazartesi"],
+      ["pzt", "pazartesi"],
+      ["monday", "pazartesi"],
+      ["salı", "salı"],
+      ["sali", "salı"],
+      ["sal", "salı"],
+      ["tuesday", "salı"],
+      ["çarşamba", "çarşamba"],
+      ["carsamba", "çarşamba"],
+      ["çar", "çarşamba"],
+      ["car", "çarşamba"],
+      ["wednesday", "çarşamba"],
+      ["perşembe", "perşembe"],
+      ["persembe", "perşembe"],
+      ["per", "perşembe"],
+      ["thursday", "perşembe"],
+      ["cuma", "cuma"],
+      ["cum", "cuma"],
+      ["friday", "cuma"],
+      ["cumartesi", "cumartesi"],
+      ["cmt", "cumartesi"],
+      ["saturday", "cumartesi"],
+      ["pazar", "pazar"],
+      ["paz", "pazar"],
+      ["sunday", "pazar"]
+    ]);
+
+    function resolveCanonicalDayKey(rawDay) {
+      const normalized = String(rawDay || "").trim().toLocaleLowerCase("tr-TR");
+      return DAY_ALIASES.get(normalized) || null;
+    }
+
+    function getMondayWeekKeyFromDateString(rawStr) {
+      const match = String(rawStr || "").match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (!match) return null;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const date = new Date(year, month - 1, day);
+      if (Number.isNaN(date.getTime())) return null;
+      return getScheduleWeekKey(date);
+    }
+
+    function resolveDayKeyFromDateString(rawStr) {
+      const match = String(rawStr || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!match) return null;
+      const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      if (Number.isNaN(date.getTime())) return null;
+      const dayIndex = (date.getDay() + 6) % 7;
+      return DAYS_INFO[dayIndex]?.name.toLocaleLowerCase("tr-TR") || null;
+    }
+
+    function extractDurationText(obj) {
+      if (!obj || typeof obj !== "object") return "";
+      const direct = obj.duration ?? obj.sure ?? obj.süre ?? obj.time ?? obj.hedefSure ?? obj.estimated_duration ?? obj.estimated_time ?? obj.totalDuration ?? obj.toplamSure ?? obj.toplam_sure ?? obj.dayDuration;
+      if (typeof direct === "number" && Number.isFinite(direct) && direct > 0) {
+        return direct <= 16 ? formatDurationMinutes(Math.round(direct * 60)) : formatDurationMinutes(Math.round(direct));
+      }
+      if (typeof direct === "string" && direct.trim()) {
+        const trimmed = direct.trim();
+        if (/^\d+(?:[.,]\d+)?$/.test(trimmed)) {
+          const num = Number(trimmed.replace(",", "."));
+          if (num > 0) return num <= 16 ? formatDurationMinutes(Math.round(num * 60)) : formatDurationMinutes(Math.round(num));
+        }
+        return trimmed;
+      }
+      const hoursVal = obj.total_hours ?? obj.totalHours ?? obj.hours ?? obj.saat ?? obj.duration_hours ?? obj.durationHours ?? obj.estimated_hours;
+      if (hoursVal !== undefined && hoursVal !== null && String(hoursVal).trim() !== "") {
+        const numHours = Number(String(hoursVal).replace(",", "."));
+        if (Number.isFinite(numHours) && numHours > 0) {
+          return formatDurationMinutes(Math.round(numHours * 60));
+        }
+      }
+      const minsVal = obj.total_minutes ?? obj.totalMinutes ?? obj.minutes ?? obj.dakika ?? obj.duration_minutes ?? obj.durationMinutes ?? obj.estimated_minutes ?? obj.dk;
+      if (minsVal !== undefined && minsVal !== null && String(minsVal).trim() !== "") {
+        const numMins = Number(String(minsVal).replace(",", "."));
+        if (Number.isFinite(numMins) && numMins > 0) {
+          return formatDurationMinutes(Math.round(numMins));
+        }
+      }
+      return "";
+    }
+
+    function normalizeTaskItem(item) {
+      if (!item) return null;
+      if (typeof item === "string") {
+        const title = item.trim();
+        return title ? { title, sub: "", duration: "", status: "Bekliyor", done: false } : null;
+      }
+      if (Array.isArray(item)) {
+        const [rawTitle, rawSub = "", rawDuration = "", rawDone = false] = item;
+        const title = String(rawTitle || "").trim();
+        const sub = String(rawSub || "").trim();
+        if (!title && !sub) return null;
+        const duration = String(rawDuration || "").trim();
+        const done = typeof rawDone === "boolean"
+          ? rawDone
+          : /tamam|bitti|completed|done|true/i.test(String(rawDone || ""));
+        return {
+          title: title || sub,
+          sub: title && sub ? sub : "",
+          duration,
+          status: done ? "Tamamlandı" : "Bekliyor",
+          done
+        };
+      }
+      if (typeof item === "object") {
+        const rawTitle = String(
+          item.title ?? item.baslik ?? item.başlık ?? item.topic ?? item.konu ?? item.gorev ?? item.görev ?? item.task ?? item.description ?? item.activity ?? item.content ?? item.name ?? item.etiket ?? ""
+        ).trim();
+        const rawSubject = String(
+          item.subject ?? item.ders ?? item.course ?? item.lesson ?? item.branch ?? item.brans ?? item.branş ?? item.alan ?? item.category ?? ""
+        ).trim();
+        const rawSource = String(
+          item.sub ?? item.kaynak ?? item.source ?? item.resource ?? item.book ?? item.kitap ?? item.yayin ?? item.yayın ?? item.material ?? item.altBaslik ?? item.alt_baslik ?? item.detay ?? item.soruBankasi ?? item.publisher ?? ""
+        ).trim();
+
+        let title = rawTitle;
+        let sub = rawSource;
+
+        if (!title && rawSubject) {
+          title = rawSubject;
+        } else if (title && rawSubject && !sub) {
+          sub = rawSubject;
+        } else if (title && rawSubject && sub && !title.toLocaleLowerCase("tr-TR").includes(rawSubject.toLocaleLowerCase("tr-TR")) && !sub.toLocaleLowerCase("tr-TR").includes(rawSubject.toLocaleLowerCase("tr-TR"))) {
+          sub = `${rawSubject} • ${sub}`;
+        }
+
+        if (!title && !sub) return null;
+        const duration = extractDurationText(item);
+        const rawGoal = item.goal ?? item.hedef ?? item.soru ?? item.questions ?? item.question_count ?? item.questionCount ?? item.test_count ?? item.testCount ?? item.tests ?? "";
+        const goal = typeof rawGoal === "number" ? `${rawGoal}` : String(rawGoal || "").trim();
+        const note = String(item.note ?? item.not ?? item.notes ?? item.aciklama ?? item.açıklama ?? item.details ?? "").trim();
+        const rawStatus = String(item.status ?? item.durum ?? "").trim();
+        const done = typeof item.done === "boolean"
+          ? item.done
+          : typeof item.tamamlandi === "boolean"
+            ? item.tamamlandi
+            : typeof item.completed === "boolean"
+              ? item.completed
+              : typeof item.is_completed === "boolean"
+                ? item.is_completed
+                : /tamam|bitti|completed|done/i.test(rawStatus);
+        const status = done ? "Tamamlandı" : (rawStatus || "Bekliyor");
+        const normalized = {
+          title: title || sub,
+          sub: title && sub ? sub : "",
+          duration,
+          status,
+          done
+        };
+        if (goal) normalized.goal = goal;
+        if (note) normalized.note = note;
+        return normalized;
+      }
+      return null;
+    }
+
+    function computeScheduleMetaForProgram(program, explicitMeta = {}) {
+      const result = { ...explicitMeta };
+      DAYS_INFO.forEach(dayInfo => {
+        const dayKey = dayInfo.name.toLocaleLowerCase("tr-TR");
+        if (result[dayKey]?.duration) return;
+        const tasks = program[dayKey] || [];
+        let totalMinutes = 0;
+        tasks.forEach(t => {
+          const mins = parseDurationMinutes(String(t.duration || ""));
+          if (mins !== null) totalMinutes += mins;
+        });
+        if (totalMinutes > 0) {
+          result[dayKey] = {
+            duration: formatDurationMinutes(totalMinutes),
+            durationLabel: "Toplam süre"
+          };
+        }
+      });
+      return result;
+    }
+
+    function cleanRawJsonText(rawText) {
+      let cleaned = String(rawText || "").trim();
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const firstBrace = cleaned.indexOf("{");
+      const firstBracket = cleaned.indexOf("[");
+      let startIdx = -1;
+      if (firstBrace !== -1 && firstBracket !== -1) startIdx = Math.min(firstBrace, firstBracket);
+      else startIdx = Math.max(firstBrace, firstBracket);
+      if (startIdx > 0) {
+        const lastBrace = cleaned.lastIndexOf("}");
+        const lastBracket = cleaned.lastIndexOf("]");
+        const endIdx = Math.max(lastBrace, lastBracket);
+        if (endIdx > startIdx) {
+          cleaned = cleaned.slice(startIdx, endIdx + 1);
+        }
+      }
+      return cleaned;
+    }
+
+    function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
+      const data = typeof rawJson === "string" ? JSON.parse(cleanRawJsonText(rawJson)) : rawJson;
+      if (!data || typeof data !== "object") {
+        throw new Error("Geçerli bir JSON nesnesi veya dizisi girilmelidir.");
+      }
+
+      const rootTarget = data.weeks && typeof data.weeks === "object" && !Array.isArray(data.weeks)
+        ? data.weeks
+        : data;
+      const weekEntryKeys = Object.keys(rootTarget).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key));
+      if (!Array.isArray(rootTarget) && weekEntryKeys.length > 0) {
+        const results = {};
+        for (const wk of weekEntryKeys) {
+          const single = normalizeImportedJsonProgram(rootTarget[wk], wk);
+          Object.assign(results, single.weeks);
+        }
+        return { weeks: results };
+      }
+
+      let resolvedWeekKey = getMondayWeekKeyFromDateString(
+        data.weekKey ?? data.week ?? data.hafta ?? data.start_date ?? data.startDate ?? data.week_start ?? ""
+      );
+      const program = emptyWeekProgram();
+      const explicitMeta = {};
+
+      if (data.scheduleMeta && typeof data.scheduleMeta === "object") {
+        for (const [k, v] of Object.entries(data.scheduleMeta)) {
+          const dayKey = resolveCanonicalDayKey(k);
+          if (dayKey && v && typeof v === "object") {
+            const dur = extractDurationText(v) || String(v.duration || "").trim();
+            if (dur) {
+              explicitMeta[dayKey] = {
+                duration: dur,
+                durationLabel: String(v.durationLabel || "Toplam süre").trim()
+              };
+            }
+          } else if (dayKey && typeof v === "string" && v.trim()) {
+            explicitMeta[dayKey] = {
+              duration: v.trim(),
+              durationLabel: "Toplam süre"
+            };
+          }
+        }
+      }
+
+      const sourceContainer =
+        data.schedule ?? data.program ?? data.days ?? data.gunler ?? data.günler ?? data.haftalikProgram ?? data.haftalıkProgram ?? data.weekly_schedule ?? data.weeklySchedule ?? data.plan ?? data.study_plan ?? data.tasks ?? data.gorevler ?? data.görevler ?? data;
+
+      if (Array.isArray(sourceContainer)) {
+        sourceContainer.forEach(entry => {
+          if (Array.isArray(entry)) {
+            const firstDay = resolveCanonicalDayKey(entry[0]);
+            const secondDay = resolveCanonicalDayKey(entry[1]);
+            if (secondDay && entry.length >= 3) {
+              const task = normalizeTaskItem({
+                title: entry[2],
+                sub: entry[3],
+                status: entry[4],
+                duration: entry[5],
+                note: entry[6]
+              });
+              if (task) program[secondDay].push(task);
+            } else if (firstDay && entry.length >= 2) {
+              const task = normalizeTaskItem(entry.slice(1));
+              if (task) program[firstDay].push(task);
+            }
+            return;
+          }
+          if (entry && typeof entry === "object") {
+            if (!resolvedWeekKey && (entry.date || entry.tarih)) {
+              resolvedWeekKey = getMondayWeekKeyFromDateString(entry.date ?? entry.tarih);
+            }
+            const dayKey =
+              resolveCanonicalDayKey(entry.day ?? entry.gun ?? entry.gün ?? entry.dayName ?? entry.day_name ?? entry.weekday) ||
+              resolveDayKeyFromDateString(entry.date ?? entry.tarih);
+            if (!dayKey) return;
+            const dayDuration = extractDurationText(entry);
+            if (dayDuration && !explicitMeta[dayKey]) {
+              explicitMeta[dayKey] = { duration: dayDuration, durationLabel: "Toplam süre" };
+            }
+            const dayTasks = entry.tasks ?? entry.gorevler ?? entry.görevler ?? entry.items ?? entry.sessions ?? entry.studies ?? entry.blocks ?? entry.activities ?? entry.dersler;
+            if (Array.isArray(dayTasks)) {
+              dayTasks.forEach(t => {
+                const normalized = normalizeTaskItem(t);
+                if (normalized) program[dayKey].push(normalized);
+              });
+            } else {
+              const normalized = normalizeTaskItem(entry);
+              if (normalized) program[dayKey].push(normalized);
+            }
+          }
+        });
+      } else if (sourceContainer && typeof sourceContainer === "object") {
+        for (const [rawKey, value] of Object.entries(sourceContainer)) {
+          const dayKey = resolveCanonicalDayKey(rawKey) || resolveDayKeyFromDateString(rawKey);
+          if (!dayKey) continue;
+          if (!resolvedWeekKey && /^\d{4}-\d{2}-\d{2}/.test(rawKey)) {
+            resolvedWeekKey = getMondayWeekKeyFromDateString(rawKey);
+          }
+          if (Array.isArray(value)) {
+            value.forEach(item => {
+              const normalized = normalizeTaskItem(item);
+              if (normalized) program[dayKey].push(normalized);
+            });
+          } else if (value && typeof value === "object") {
+            if (!resolvedWeekKey && (value.date || value.tarih)) {
+              resolvedWeekKey = getMondayWeekKeyFromDateString(value.date ?? value.tarih);
+            }
+            const dayDuration = extractDurationText(value);
+            if (dayDuration && !explicitMeta[dayKey]) {
+              explicitMeta[dayKey] = {
+                duration: dayDuration,
+                durationLabel: String(value.durationLabel || "Toplam süre").trim()
+              };
+            }
+            const dayTasks = value.tasks ?? value.gorevler ?? value.görevler ?? value.items ?? value.sessions ?? value.studies ?? value.blocks ?? value.activities ?? value.dersler ?? [];
+            if (Array.isArray(dayTasks)) {
+              dayTasks.forEach(item => {
+                const normalized = normalizeTaskItem(item);
+                if (normalized) program[dayKey].push(normalized);
+              });
+            }
+          }
+        }
+      }
+
+      const targetWeekKey = resolvedWeekKey || fallbackWeekKey;
+      const totalTasks = DAYS_INFO.reduce(
+        (sum, d) => sum + (program[d.name.toLocaleLowerCase("tr-TR")] || []).length,
+        0
+      );
+      if (totalTasks === 0) {
+        throw new Error("JSON içinde geçerli gün ve görev verisi bulunamadı.");
+      }
+
+      return {
+        weeks: {
+          [targetWeekKey]: {
+            program,
+            scheduleMeta: computeScheduleMetaForProgram(program, explicitMeta)
+          }
+        }
+      };
+    }
+
+    function openJsonImportModal() {
+      closeProfileMenu();
+      const targetLabel = document.getElementById("current-week-label")?.textContent || viewedScheduleWeekKey;
+      const targetEl = document.getElementById("json-import-target-week");
+      if (targetEl) targetEl.textContent = targetLabel;
+      const statusEl = document.getElementById("json-import-status");
+      if (statusEl) {
+        statusEl.textContent = "";
+        statusEl.className = "mt-2 text-xs font-semibold hidden";
+      }
+      document.getElementById("json-import-modal").classList.remove("hidden");
+    }
+
+    function handleJsonFileSelect(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById("json-program-textarea").value = String(reader.result || "");
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function applyJsonProgramImport() {
+      const rawText = document.getElementById("json-program-textarea").value.trim();
+      const statusEl = document.getElementById("json-import-status");
+      if (!rawText) {
+        statusEl.textContent = "Lütfen JSON içeriğini yapıştırın veya bir .json dosyası seçin.";
+        statusEl.className = "mt-2 text-xs font-semibold text-rose-600";
+        return;
+      }
+      try {
+        const result = normalizeImportedJsonProgram(rawText, viewedScheduleWeekKey);
+        const importedKeys = Object.keys(result.weeks);
+        importedKeys.forEach(wk => {
+          const existingWeek = programWeeks[wk];
+          const incomingWeek = result.weeks[wk];
+          if (existingWeek && existingWeek.program) {
+            const mergedProgram = emptyWeekProgram();
+            const mergedMeta = { ...(existingWeek.scheduleMeta || {}) };
+            DAYS_INFO.forEach(d => {
+              const dk = d.name.toLocaleLowerCase("tr-TR");
+              const incomingTasks = incomingWeek.program[dk] || [];
+              if (incomingTasks.length > 0) {
+                mergedProgram[dk] = incomingTasks;
+                if (incomingWeek.scheduleMeta?.[dk]) {
+                  mergedMeta[dk] = incomingWeek.scheduleMeta[dk];
+                }
+              } else {
+                mergedProgram[dk] = existingWeek.program[dk] || [];
+              }
+            });
+            programWeeks[wk] = {
+              program: mergedProgram,
+              scheduleMeta: mergedMeta
+            };
+          } else {
+            programWeeks[wk] = incomingWeek;
+          }
+          customImportedWeeks[wk] = true;
+        });
+        localStorage.setItem(CUSTOM_IMPORTED_WEEKS_KEY, JSON.stringify(customImportedWeeks));
+        localStorage.setItem(PROGRAM_WEEKS_KEY, JSON.stringify(programWeeks));
+
+        const activeWeekKey = importedKeys.includes(viewedScheduleWeekKey)
+          ? viewedScheduleWeekKey
+          : importedKeys[0];
+        if (activeWeekKey !== viewedScheduleWeekKey) {
+          const [y, m, d] = activeWeekKey.split("-").map(Number);
+          const targetMonday = getScheduleDate(0, new Date(y, m - 1, d));
+          const currentMonday = getScheduleDate(0);
+          viewedWeekOffset = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+          viewedScheduleWeekKey = activeWeekKey;
+        }
+
+        appState = JSON.parse(JSON.stringify(programWeeks[viewedScheduleWeekKey].program));
+        scheduleMeta = JSON.parse(JSON.stringify(programWeeks[viewedScheduleWeekKey].scheduleMeta || {}));
+        saveState();
+        renderProgram();
+        syncWeeklyPlanToSheet();
+        closeModal("json-import-modal");
+      } catch (err) {
+        statusEl.textContent = err instanceof Error ? err.message : "JSON biçimi okunamadı.";
+        statusEl.className = "mt-2 text-xs font-semibold text-rose-600";
+      }
+    }
+
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") {
         closeProfileMenu();
@@ -1102,6 +1592,7 @@
         closeModal("profile-modal");
         closeModal("settings-modal");
         closeModal("reminder-modal");
+        closeModal("json-import-modal");
       }
     });
 
@@ -1348,6 +1839,7 @@
       appState[position.dayKey].splice(insertIndex, 0, task);
       saveState();
       renderProgram();
+      syncWeeklyPlanToSheet();
     }
 
     document.addEventListener("pointerdown", startTaskPress);
@@ -1368,7 +1860,8 @@
       task.status = task.done ? "Tamamlandı" : "Bekliyor";
       saveState();
       renderProgram();
-      if (isViewingCurrentWeek()) syncTaskStatusToSheet(dayKey, task);
+      syncTaskStatusToSheet(dayKey, task);
+      syncWeeklyPlanToSheet();
     }
 
     function getTaskSyncId(dayKey, task) {
@@ -1377,12 +1870,12 @@
 
     function setTaskSyncStatus(message, colorClass) {
       const status = document.getElementById("sync-status");
+      if (!status) return;
       status.textContent = message;
-      status.className = `block px-4 pb-2 text-xs font-semibold ${colorClass}`;
+      status.className = `hidden block px-4 pb-2 text-xs font-semibold ${colorClass}`;
     }
 
     function syncTaskStatusToSheet(dayKey, task) {
-      if (!isViewingCurrentWeek()) return;
       const update = {
         id: getTaskSyncId(dayKey, task),
         day: dayKey,
@@ -1400,26 +1893,14 @@
         localStorage.setItem(TASK_SYNC_QUEUE_KEY, JSON.stringify(taskSyncQueue));
       } catch (error) {
         console.error("Görev eşitleme kuyruğu kaydedilemedi:", error);
-        setTaskSyncStatus("Görev cihazda güncellendi ancak eşitleme kuyruğa alınamadı.", "text-rose-600");
         return;
       }
 
-      setTaskSyncStatus(
-        navigator.onLine
-          ? "Görev güncellendi; Excel'e arka planda gönderiliyor."
-          : "Çevrimdışı; görev bağlantı gelince eşitlenecek.",
-        "text-amber-600"
-      );
-      const badge = document.getElementById("syncBadge");
-      badge.textContent = navigator.onLine ? "⏳ E-Tablo Eşitleniyor..." : "● Çevrimdışı — eşitleme sırada";
-      badge.className = navigator.onLine
-        ? "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700"
-        : "rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600";
       flushTaskSyncQueue();
     }
 
     async function flushTaskSyncQueue() {
-      if (!isViewingCurrentWeek() || isFlushingTaskSyncQueue || !navigator.onLine || taskSyncQueue.length === 0) return;
+      if (isFlushingTaskSyncQueue || !navigator.onLine || taskSyncQueue.length === 0) return;
       isFlushingTaskSyncQueue = true;
 
       try {
@@ -1449,15 +1930,8 @@
           }
         }
         setTaskSyncStatus("Senkronizasyon isteği gönderildi.", "text-emerald-600");
-        const badge = document.getElementById("syncBadge");
-        badge.textContent = "● E-Tablo Güncelleme İsteği Gönderildi";
-        badge.className = "rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700";
       } catch (error) {
         console.error("Görev durumu Apps Script'e gönderilemedi:", error);
-        setTaskSyncStatus("Bağlantı bekleniyor; görev eşitlemesi sıraya alındı.", "text-amber-600");
-        const badge = document.getElementById("syncBadge");
-        badge.textContent = "● E-Tablo Eşitlemesi Bekliyor";
-        badge.className = "rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700";
         if (taskSyncRetryTimer === null) {
           taskSyncRetryTimer = window.setTimeout(() => {
             taskSyncRetryTimer = null;
@@ -1483,6 +1957,7 @@
       appState[key].push({ title, sub, done: false, status: "Bekliyor" });
       saveState();
       renderProgram();
+      syncWeeklyPlanToSheet();
     }
 
     function parseCsv(text) {
@@ -1526,17 +2001,22 @@
       return rows;
     }
 
-    async function fetchSheetData() {
+    async function fetchSheetData(options = {}) {
+      const isAutoSync = Boolean(options && options.isAutoSync);
       const button = document.getElementById("sync-button");
       const status = document.getElementById("sync-status");
       if (!isViewingCurrentWeek()) {
-        status.textContent = "Geçmiş haftaların kayıtları değiştirilmez; Excel eşitlemesi yalnızca bu hafta için kullanılabilir.";
-        status.className = "text-xs font-semibold text-slate-500";
+        if (status) {
+          status.textContent = "Geçmiş haftaların kayıtları değiştirilmez; Excel eşitlemesi yalnızca bu hafta için kullanılabilir.";
+          status.className = "hidden text-xs font-semibold text-slate-500";
+        }
         return false;
       }
-      button.disabled = true;
-      status.textContent = "Senkronize ediliyor...";
-      status.className = "text-xs font-semibold text-slate-500";
+      if (button) button.disabled = true;
+      if (!isAutoSync && status) {
+        status.textContent = "Senkronize ediliyor...";
+        status.className = "hidden text-xs font-semibold text-slate-500";
+      }
 
       try {
         const csvUrl = new URL(CSV_URL);
@@ -1628,16 +2108,13 @@
         });
 
         if (importedTaskCount === 0) throw new Error("Haftalık programda geçerli görev bulunamadı.");
-        if (isProvidedProgramWeek) {
-          const expectedTasks = Object.entries(PROVIDED_WEEKLY_PROGRAM).flatMap(([day, tasks]) =>
-            tasks.map(([title, sub]) => JSON.stringify([day, title, sub]))
-          );
-          const importedTasks = new Set(Object.entries(newTasks).flatMap(([day, tasks]) =>
-            tasks.map(task => JSON.stringify([day, task.title, task.sub || ""]))
-          ));
-          if (expectedTasks.length !== importedTaskCount || expectedTasks.some(task => !importedTasks.has(task))) {
-            throw new Error("Excel'deki haftalık program 19–25 Ekim planıyla eşleşmiyor; eski haftanın görevleri siteye yüklenmedi. Önce profilden 19–25 Ekim programını Excel'e uygula.");
+        const currentWeekDef = WEEK_DEFINITIONS[viewedScheduleWeekKey];
+        if (currentWeekDef && !doesProgramMatchExpected(newTasks, currentWeekDef.program)) {
+          if (isAutoSync) {
+            status.textContent = "";
+            return false;
           }
+          throw new Error(`Excel'deki haftalık program bu haftanın (${currentWeekDef.planLabel}) ile eşleşmiyor; başka haftanın görevleri bu haftaya yüklenmedi. Önce profilden bu haftanın programını Excel'e uygula.`);
         }
 
         taskSyncQueue.forEach(update => {
@@ -1670,11 +2147,13 @@
         return true;
       } catch (e) {
         console.error("Senkronizasyon hatası:", e);
-        status.textContent = "Senkronizasyonda hata oldu";
-        status.className = "text-xs font-semibold text-rose-600";
+        if (!isAutoSync) {
+          status.textContent = e instanceof Error && e.message ? e.message : "Senkronizasyonda hata oldu";
+          status.className = "text-xs font-semibold text-rose-600";
+        }
         return false;
       } finally {
-        button.disabled = !isViewingCurrentWeek();
+        if (button) button.disabled = !isViewingCurrentWeek();
       }
     }
 
@@ -1714,7 +2193,7 @@
     renderProgram();
     flushTaskSyncQueue();
     if (appSettings.syncOnLoad) {
-      const syncProgram = () => fetchSheetData();
+      const syncProgram = () => fetchSheetData({ isAutoSync: true });
       if ("requestIdleCallback" in window) window.requestIdleCallback(syncProgram, { timeout: 2500 });
       else window.setTimeout(syncProgram, 0);
     }
