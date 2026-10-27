@@ -273,6 +273,7 @@ export function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
 
   const program = emptyProgram();
   const scheduleMeta = {};
+  const providedDays = new Set();
 
   if (data.scheduleMeta && typeof data.scheduleMeta === "object") {
     for (const [k, v] of Object.entries(data.scheduleMeta)) {
@@ -304,6 +305,7 @@ export function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
         const firstDay = resolveCanonicalDayKey(entry[0]);
         const secondDay = resolveCanonicalDayKey(entry[1]);
         if (secondDay && entry.length >= 3) {
+          providedDays.add(secondDay);
           const task = normalizeTaskItem({
             title: entry[2],
             sub: entry[3],
@@ -313,6 +315,7 @@ export function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
           });
           if (task) program[secondDay].push(task);
         } else if (firstDay && entry.length >= 2) {
+          providedDays.add(firstDay);
           const task = normalizeTaskItem(entry.slice(1));
           if (task) program[firstDay].push(task);
         }
@@ -327,6 +330,7 @@ export function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
           resolveCanonicalDayKey(entry.day ?? entry.gun ?? entry.gün ?? entry.dayName ?? entry.day_name) ||
           resolveDayKeyFromDateString(entryDateStr);
         if (!dayKey) return;
+        providedDays.add(dayKey);
 
         const dayDuration = extractDurationText(entry);
         const dayTasks =
@@ -352,6 +356,7 @@ export function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
     for (const [rawKey, value] of Object.entries(sourceContainer)) {
       const dayKey = resolveCanonicalDayKey(rawKey) || resolveDayKeyFromDateString(rawKey);
       if (!dayKey) continue;
+      providedDays.add(dayKey);
       if (!firstDetectedDateWeekKey) {
         firstDetectedDateWeekKey = getMondayWeekKeyFromDateString(rawKey);
       }
@@ -401,9 +406,60 @@ export function normalizeImportedJsonProgram(rawJson, fallbackWeekKey) {
     weeks: {
       [targetWeekKey]: {
         program,
-        scheduleMeta
+        scheduleMeta,
+        providedDays: Array.from(providedDays)
       }
     }
+  };
+}
+
+export function mergeImportedWeekIntoExisting(existingWeek, incomingWeek) {
+  if (!existingWeek || !existingWeek.program) {
+    return {
+      program: JSON.parse(JSON.stringify(incomingWeek.program)),
+      scheduleMeta: JSON.parse(JSON.stringify(incomingWeek.scheduleMeta || {}))
+    };
+  }
+  const providedSet = new Set(
+    Array.isArray(incomingWeek.providedDays) && incomingWeek.providedDays.length > 0
+      ? incomingWeek.providedDays
+      : CANONICAL_DAYS.filter(d => (incomingWeek.program?.[d] || []).length > 0)
+  );
+  const mergedProgram = Object.fromEntries(CANONICAL_DAYS.map(day => [day, []]));
+  const mergedMeta = { ...(existingWeek.scheduleMeta || {}) };
+
+  CANONICAL_DAYS.forEach(dayKey => {
+    const existingDayTasks = Array.isArray(existingWeek.program[dayKey]) ? existingWeek.program[dayKey] : [];
+    if (!providedSet.has(dayKey)) {
+      mergedProgram[dayKey] = JSON.parse(JSON.stringify(existingDayTasks));
+      return;
+    }
+    const incomingDayTasks = Array.isArray(incomingWeek.program[dayKey]) ? incomingWeek.program[dayKey] : [];
+    mergedProgram[dayKey] = incomingDayTasks.map(task => {
+      const copy = { ...task };
+      if (!copy.done) {
+        const normalizedTitle = (copy.title || "").trim().toLocaleLowerCase("tr-TR");
+        const matchedExisting = existingDayTasks.find(
+          candidate =>
+            candidate &&
+            (candidate.title || "").trim().toLocaleLowerCase("tr-TR") === normalizedTitle
+        );
+        if (matchedExisting && matchedExisting.done) {
+          copy.done = true;
+          copy.status = "Tamamlandı";
+          if (!copy.note && matchedExisting.note) copy.note = matchedExisting.note;
+        }
+      }
+      return copy;
+    });
+    if (incomingWeek.scheduleMeta?.[dayKey]) {
+      mergedMeta[dayKey] = { ...incomingWeek.scheduleMeta[dayKey] };
+    }
+  });
+
+  return {
+    program: mergedProgram,
+    scheduleMeta: mergedMeta
   };
 }
 

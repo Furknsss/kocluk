@@ -6,7 +6,8 @@ import {
   FOLLOWING_WEEK_PROGRAM_KEY,
   doesProgramMatchExpected,
   mergeStatusIntoExpectedProgram,
-  normalizeImportedJsonProgram
+  normalizeImportedJsonProgram,
+  mergeImportedWeekIntoExisting
 } from "./week-program.js";
 
 test("week keys correspond to Monday start dates of each October 2026 week", () => {
@@ -97,3 +98,56 @@ test("normalizeImportedJsonProgram parses Gemini schedule array format with week
   assert.equal(parsed.weeks["2026-10-26"].program.salı[0].duration, "30 dakika");
   assert.equal(parsed.weeks["2026-10-26"].program.salı[1].duration, "2 saat");
 });
+
+test("mergeImportedWeekIntoExisting updates only revised days and preserves completed status on matching tasks", () => {
+  const existingWeek = {
+    program: {
+      pazartesi: [
+        { title: "3D Türkiye Geneli Deneme Sınavı", sub: "3D Yayınları", done: true, status: "Tamamlandı" }
+      ],
+      salı: [
+        { title: "Problemler Deneme 1", sub: "Acil Problemler Denemesi", done: true, status: "Tamamlandı" },
+        { title: "Eski Görev", sub: "Eski Kaynak", done: false, status: "Bekliyor" }
+      ],
+      çarşamba: [],
+      perşembe: [],
+      cuma: [],
+      cumartesi: [],
+      pazar: []
+    },
+    scheduleMeta: {
+      pazartesi: { duration: "8 saat 30 dakika", durationLabel: "Toplam süre" }
+    }
+  };
+
+  const incoming = normalizeImportedJsonProgram(
+    JSON.stringify({
+      week: "2026-10-27_to_2026-11-01",
+      schedule: [
+        {
+          date: "2026-10-27",
+          day: "Salı",
+          total_hours: 6.5,
+          tasks: [
+            { title: "Problemler Deneme 1", sub: "Acil Problemler Denemesi", duration: "30 Dakika" },
+            { title: "Yeni Revize Görev", sub: "Orijinal AYT Mat", duration: "2 Saat" }
+          ]
+        }
+      ]
+    }),
+    "2026-10-26"
+  ).weeks["2026-10-26"];
+
+  const merged = mergeImportedWeekIntoExisting(existingWeek, incoming);
+  // Monday was not in the JSON -> preserved untouched
+  assert.equal(merged.program.pazartesi.length, 1);
+  assert.equal(merged.program.pazartesi[0].done, true);
+  // Tuesday was in the JSON -> updated with new tasks, AND Problemler Deneme 1 kept its done=true status
+  assert.equal(merged.program.salı.length, 2);
+  assert.equal(merged.program.salı[0].title, "Problemler Deneme 1");
+  assert.equal(merged.program.salı[0].done, true);
+  assert.equal(merged.program.salı[0].status, "Tamamlandı");
+  assert.equal(merged.program.salı[1].title, "Yeni Revize Görev");
+  assert.equal(merged.program.salı[1].done, false);
+});
+
