@@ -1052,7 +1052,21 @@
     }
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js")
+      let swRefreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (swRefreshing) return;
+        swRefreshing = true;
+        window.location.reload();
+      });
+      navigator.serviceWorker.register("./service-worker.js", { updateViaCache: "none" })
+        .then(registration => {
+          registration.update().catch(() => {});
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+              registration.update().catch(() => {});
+            }
+          });
+        })
         .catch(error => console.error("Service worker kaydedilemedi:", error));
     }
 
