@@ -226,6 +226,8 @@ export function normalizeTaskItem(item) {
     };
     if (goal) normalized.goal = goal;
     if (note) normalized.note = note;
+    const videoUrl = String(item.videoUrl ?? item.video_url ?? item.youtubeUrl ?? item.youtube_url ?? item.video_link ?? "").trim();
+    if (videoUrl) normalized.videoUrl = videoUrl;
     return normalized;
   }
   return null;
@@ -448,6 +450,7 @@ export function mergeImportedWeekIntoExisting(existingWeek, incomingWeek) {
           copy.done = true;
           copy.status = "Tamamlandı";
           if (!copy.note && matchedExisting.note) copy.note = matchedExisting.note;
+          if (!copy.videoUrl && matchedExisting.videoUrl) copy.videoUrl = matchedExisting.videoUrl;
         }
       }
       return copy;
