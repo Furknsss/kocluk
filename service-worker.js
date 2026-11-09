@@ -1,7 +1,8 @@
-const CACHE_NAME = "kocluk-pwa-v17";
+const CACHE_NAME = "kocluk-pwa-v18";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./weekly-video-links-2026-11-09.js",
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-180.png",
