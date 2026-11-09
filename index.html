@@ -1722,8 +1722,12 @@
       if (explicit) return { url: explicit, exact: true };
 
       const combined = (title + " " + source).toLocaleLowerCase("tr-TR");
+      const hasNamedTeacher = /(?:ertan\s+sinan\s+şahin|dr\.?\s*biyoloji|eyüp\s*b\.?|vip\s*fizik|kimya\s+adası|bıyıklı\s*matematik|rehber\s*matematik|mert\s*hoca|barış\s*çelenk|benim\s*hocam|hoca\s*[:：-])/i.test(combined);
+      const practiceOnly = /(?:deneme|test\s*çöz|test\s*\d|ödev|soru\s*çöz|yanlış\s*analiz|tekrar\s*test)/i.test(title) &&
+        !/video|konu\s*(?:anlat|çalış)|ders\s*(?:izle|videosu|videoları)|youtube/i.test(combined);
       const isVideoStudy = /video|konu\s*(?:anlat|çalış)|ders\s*(?:izle|videosu|videoları)|youtube/i.test(combined) ||
-        /\b\d+\s*(?:[-–.]\s*\d+)?\.?\s*ders(?:ler|leri|i)?\b/i.test(title);
+        /\b\d+\s*(?:[-–.]\s*\d+)?\.?\s*ders(?:ler|leri|i)?\b/i.test(title) ||
+        (hasNamedTeacher && !practiceOnly);
       if (!isVideoStudy) return null;
 
       // Allstar lessons are normally available inside their own app, not as verified YouTube uploads.
