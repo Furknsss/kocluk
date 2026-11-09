@@ -758,7 +758,8 @@
       const cleanNote = parseTaskNote(task?.note || "");
       const metaPayload = JSON.stringify({
         week: weekKey || viewedScheduleWeekKey,
-        dayDuration: dayDuration || ""
+        dayDuration: dayDuration || "",
+        ...(task?.videoUrl ? { videoUrl: task.videoUrl } : {})
       });
       return cleanNote ? `${cleanNote}\n[KOCLUK_META]${metaPayload}` : `[KOCLUK_META]${metaPayload}`;
     }
@@ -1350,6 +1351,8 @@
         };
         if (goal) normalized.goal = goal;
         if (note) normalized.note = note;
+        const videoUrl = String(item.videoUrl ?? item.video_url ?? item.youtubeUrl ?? item.youtube_url ?? item.video_link ?? "").trim();
+        if (videoUrl) normalized.videoUrl = videoUrl;
         return normalized;
       }
       return null;
@@ -1612,6 +1615,7 @@
                     copy.done = true;
                     copy.status = "Tamamlandı";
                     if (!copy.note && matchedExisting.note) copy.note = matchedExisting.note;
+                    if (!copy.videoUrl && matchedExisting.videoUrl) copy.videoUrl = matchedExisting.videoUrl;
                   }
                 }
                 return copy;
@@ -1688,6 +1692,55 @@
       if (weeklyProgress) weeklyProgress.setAttribute("aria-valuenow", String(percent));
     }
 
+
+    // Never guess an individual video ID. An explicit YouTube URL opens directly;
+    // otherwise a study-video task opens a targeted teacher/topic search.
+    function validYouTubeUrl(raw) {
+      if (!raw) return "";
+      try {
+        const url = new URL(String(raw).trim());
+        if (url.protocol !== "https:") return "";
+        const host = url.hostname.toLowerCase();
+        if (host === "youtu.be" || host === "www.youtu.be")
+          return /^\/[a-zA-Z0-9_-]{11}\/?$/.test(url.pathname) ? url.href : "";
+        if (!["youtube.com", "www.youtube.com", "m.youtube.com"].includes(host)) return "";
+        if (url.pathname === "/watch" && /^[a-zA-Z0-9_-]{11}$/.test(url.searchParams.get("v") || ""))
+          return url.href;
+        if (/^\/(shorts|live)\/[a-zA-Z0-9_-]{11}\/?$/.test(url.pathname)) return url.href;
+        if (url.pathname === "/playlist" && /^[a-zA-Z0-9_-]{10,}$/.test(url.searchParams.get("list") || ""))
+          return url.href;
+        return "";
+      } catch { return ""; }
+    }
+
+    function getYouTubeTaskAction(task) {
+      const title = String(task?.title || "");
+      const source = String(task?.sub || "");
+      const note = String(task?.note || "");
+      const noteMatch = note.match(/https:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?[^\s<>]+|shorts\/[^\s<>]+|live\/[^\s<>]+|playlist\?[^\s<>]+)|youtu\.be\/[^\s<>]+)/i);
+      const explicit = validYouTubeUrl(task?.videoUrl || task?.youtubeUrl || task?.video_url || task?.youtube_url || (noteMatch ? noteMatch[0].replace(/[.,;)]+$/, "") : ""));
+      if (explicit) return { url: explicit, exact: true };
+
+      const combined = (title + " " + source).toLocaleLowerCase("tr-TR");
+      const isVideoStudy = /video|konu\s*(?:anlat|çalış)|ders\s*(?:izle|videosu|videoları)|youtube/i.test(combined) ||
+        /\b\d+\s*(?:[-–.]\s*\d+)?\.?\s*ders(?:ler|leri|i)?\b/i.test(title);
+      if (!isVideoStudy) return null;
+
+      // Allstar lessons are normally available inside their own app, not as verified YouTube uploads.
+      if (/345\s*allstar/i.test(combined)) return null;
+      const topic = title.replace(/\([^)]*(?:test|ödev)[^)]*\)/gi, " ").replace(/\+\s*(?:\d+\s*)?(?:test|ödev).*/gi, " ").replace(/\s+/g, " ").trim();
+      const teacher = source.replace(/^[📖🎬\s]+/, "").trim();
+      const query = [topic, teacher, "konu anlatımı"].filter(Boolean).join(" ").slice(0, 180);
+      return { url: "https://www.youtube.com/results?search_query=" + encodeURIComponent(query), exact: false };
+    }
+
+    function renderTaskYouTubeLink(task) {
+      const action = getYouTubeTaskAction(task);
+      if (!action) return "";
+      const tooltip = action.exact ? "YouTube videosunu aç" : "Bu konu ve hocayı YouTube'da ara";
+      return `<a href="${escapeHtml(action.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()" aria-label="${tooltip}" title="${tooltip}" class="flex h-7 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 transition hover:bg-red-100 hover:text-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500" style="touch-action:manipulation"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L16 12l-6.4 3.6Z"/></svg></a>`;
+    }
+
     function renderProgram() {
       updateCurrentWeekLabel();
       updateWeeklyProgress();
@@ -1729,7 +1782,8 @@
           html += `
             <div data-task-index="${taskIndex}" onclick="toggleTask('${key}', ${taskIndex})" class="baykus-card ${task.done ? "completed" : ""}" title="Taşımak için basılı tutup sürükle">
               <div class="flex items-start justify-between">
-                <span class="card-title font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(task.title)}</span>
+                <span class="card-title min-w-0 flex-1 font-extrabold text-[13px] text-slate-950 leading-snug">${escapeHtml(task.title)}</span>
+                ${renderTaskYouTubeLink(task)}
                 <button type="button" data-task-drag-handle onclick="event.stopPropagation()" aria-label="Görevi taşımak için basılı tut" title="Görevi taşımak için basılı tut" class="task-drag-handle -mr-1 -mt-1 px-1 text-slate-400 hover:text-indigo-600 font-bold text-base leading-none">⠿</button>
               </div>
               ${task.sub ? `<div class="mt-1 flex items-start gap-1 text-[11px] font-medium leading-tight text-slate-500"><svg class="mt-px h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg><span>${escapeHtml(task.sub)}</span></div>` : ""}
@@ -2207,7 +2261,8 @@
             done: /tamam|bitti|completed|done/i.test((row[4] || "").trim()),
             duration: taskDuration,
             goal: taskDuration ? "" : taskGoal,
-            note: parsedNote
+            note: parsedNote,
+            ...(rowMeta?.videoUrl ? { videoUrl: rowMeta.videoUrl } : {})
           });
           importedTaskCount += 1;
         });
