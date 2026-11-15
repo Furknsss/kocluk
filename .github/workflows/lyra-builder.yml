@@ -1,0 +1,11 @@
+name: Lyra APK builder probe
+on:
+  push:
+    branches: [feature/lyra-apk-temporary-build]
+  pull_request:
+    branches: [main]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "runner available"
